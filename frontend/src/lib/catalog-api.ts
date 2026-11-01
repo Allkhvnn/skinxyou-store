@@ -115,6 +115,19 @@ export async function getBrand(slug: string): Promise<Brand | null> {
   return getJson<Brand>(`/api/catalog/brands/${encodeURIComponent(slug)}`);
 }
 
+export type CheckoutOptions = {
+  currency: string;
+  courierFee: number;
+  freeCourierFrom: number;
+  pickupAddress: string;
+};
+
+export async function getCheckoutOptions(): Promise<CheckoutOptions> {
+  "use cache";
+  cacheLife("hours");
+  return (await getJson<CheckoutOptions>("/api/checkout/options"))!;
+}
+
 export async function getCategories(): Promise<Category[]> {
   "use cache";
   cacheLife("hours");

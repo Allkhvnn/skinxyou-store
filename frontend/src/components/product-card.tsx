@@ -1,38 +1,49 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { QuickAddButton } from "@/components/cart/add-to-cart-button";
 import { Price } from "@/components/price";
 import type { ProductSummary } from "@/lib/catalog-api";
 
 export function ProductCard({ product }: { product: ProductSummary }) {
   return (
-    <Link href={`/product/${product.slug}`} className="group block outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <div className="relative aspect-[4/5] overflow-hidden bg-image">
-        {product.imageUrl ? (
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
-            className="object-cover transition duration-700 group-hover:scale-[1.04]"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs uppercase tracking-widest text-muted-foreground">
-            Нет фото
+    // The quick-add button sits over the image but outside the link (no interactive nesting).
+    <article className="group relative">
+      <Link href={`/product/${product.slug}`} className="block outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <div className="relative aspect-[4/5] overflow-hidden bg-image">
+          {product.imageUrl ? (
+            <Image
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
+              className="object-cover transition duration-700 group-hover:scale-[1.04]"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-xs uppercase tracking-widest text-muted-foreground">
+              Нет фото
+            </div>
+          )}
+          {!product.inStock ? (
+            <span className="product-badge">Нет в наличии</span>
+          ) : product.promoPrice != null ? (
+            <span className="product-badge text-destructive">Скидка</span>
+          ) : null}
+        </div>
+        <div className="pt-4">
+          {product.brand && <p className="eyebrow mb-1.5 text-muted-foreground">{product.brand.name}</p>}
+          <h3 className="line-clamp-2 font-serif text-lg leading-snug sm:text-xl">{product.name}</h3>
+          <Price price={product.price} promoPrice={product.promoPrice} className="mt-1.5 block text-sm" />
+        </div>
+      </Link>
+      {product.inStock && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/5] overflow-hidden">
+          <div className="pointer-events-auto">
+            <QuickAddButton product={product} />
           </div>
-        )}
-        {!product.inStock ? (
-          <span className="product-badge">Нет в наличии</span>
-        ) : product.promoPrice != null ? (
-          <span className="product-badge text-destructive">Скидка</span>
-        ) : null}
-      </div>
-      <div className="pt-4">
-        {product.brand && <p className="eyebrow mb-1.5 text-muted-foreground">{product.brand.name}</p>}
-        <h3 className="line-clamp-2 font-serif text-lg leading-snug sm:text-xl">{product.name}</h3>
-        <Price price={product.price} promoPrice={product.promoPrice} className="mt-1.5 block text-sm" />
-      </div>
-    </Link>
+        </div>
+      )}
+    </article>
   );
 }
 

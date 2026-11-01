@@ -4,6 +4,8 @@ import { Menu, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CartButton, CartDrawer } from "@/components/cart/cart-drawer";
+
 const NAV = [
   { href: "/catalog", label: "Каталог" },
   { href: "/catalog?inStock=true", label: "В наличии" },
@@ -41,11 +43,16 @@ export function SiteHeader() {
               </Link>
             ))}
           </nav>
-          <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Поиск">
-            <Search className="size-5" strokeWidth={1.7} />
-          </button>
+          <div className="flex items-center gap-1 sm:gap-3">
+            <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Поиск">
+              <Search className="size-5" strokeWidth={1.7} />
+            </button>
+            <CartButton />
+          </div>
         </div>
       </header>
+
+      <CartDrawer />
 
       {menuOpen && (
         <div className="fixed inset-0 z-50 bg-background p-6 lg:hidden" role="dialog" aria-modal="true" aria-label="Меню">

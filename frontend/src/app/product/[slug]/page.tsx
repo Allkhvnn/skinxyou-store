@@ -3,11 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import { Price } from "@/components/price";
 import { ProductGrid } from "@/components/product-card";
 import { ProductGallery } from "@/components/product-gallery";
 import { WhatsAppButton } from "@/components/whatsapp-button";
-import { getProduct } from "@/lib/catalog-api";
+import { getCheckoutOptions, getProduct } from "@/lib/catalog-api";
+import { formatPrice } from "@/lib/format";
 import { productAvailabilityMessage, productOrderMessage } from "@/lib/whatsapp";
 
 export async function generateMetadata(props: PageProps<"/product/[slug]">): Promise<Metadata> {
@@ -43,7 +45,7 @@ export default function ProductPage(props: PageProps<"/product/[slug]">) {
 
 async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "params">) {
   const { slug } = await params;
-  const product = await getProduct(slug);
+  const [product, options] = await Promise.all([getProduct(slug), getCheckoutOptions()]);
   if (!product) notFound();
 
   return (
@@ -73,17 +75,28 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
 
           <div className="flex flex-col gap-3 border-y border-primary/15 py-6">
             {product.inStock ? (
-              <WhatsAppButton message={productOrderMessage(product)} className="w-full">
-                Заказать в WhatsApp
-              </WhatsAppButton>
+              <>
+                <AddToCartButton className="w-full"
+                  product={{ slug: product.slug, name: product.name, imageUrl: product.images[0]?.url ?? null,
+                    price: product.price, promoPrice: product.promoPrice }} />
+                <WhatsAppButton variant="outline" message={productOrderMessage(product)} className="w-full">
+                  Заказать в WhatsApp
+                </WhatsAppButton>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Доставка по Алматы — {formatPrice(options.courierFee)}, бесплатно от{" "}
+                  {formatPrice(options.freeCourierFrom)}. Самовывоз — бесплатно.
+                </p>
+              </>
             ) : (
-              <WhatsAppButton variant="outline" message={productAvailabilityMessage(product)} className="w-full">
-                Спросить о поступлении
-              </WhatsAppButton>
+              <>
+                <WhatsAppButton variant="outline" message={productAvailabilityMessage(product)} className="w-full">
+                  Спросить о поступлении
+                </WhatsAppButton>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Напишите нам — сообщим, когда товар появится.
+                </p>
+              </>
             )}
-            <p className="text-xs leading-5 text-muted-foreground">
-              Менеджер подтвердит наличие и согласует доставку по Алматы.
-            </p>
           </div>
 
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">

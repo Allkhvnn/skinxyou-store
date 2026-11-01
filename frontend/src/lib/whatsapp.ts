@@ -27,6 +27,19 @@ export function productOrderMessage(product: {
     .join("\n");
 }
 
+/** Whole-cart request; prices are the ones shown on the site, the manager confirms the final sum. */
+export function cartOrderMessage(
+  items: { name: string; slug: string; quantity: number; price: number | null; promoPrice: number | null }[],
+): string {
+  const lines = items.map((item, i) => {
+    const price = item.promoPrice ?? item.price;
+    const priceText = price != null ? ` × ${formatPrice(price)}` : "";
+    return `${i + 1}. ${item.name} — ${item.quantity} шт.${priceText}\n${SITE_URL}/product/${item.slug}`;
+  });
+  const total = items.reduce((sum, i) => sum + (i.promoPrice ?? i.price ?? 0) * i.quantity, 0);
+  return ["Здравствуйте! Хочу заказать:", ...lines, `Сумма товаров: ${formatPrice(total)}`].join("\n");
+}
+
 export function productAvailabilityMessage(product: { name: string; slug: string }): string {
   return [
     "Здравствуйте! Подскажите, когда появится в наличии:",
