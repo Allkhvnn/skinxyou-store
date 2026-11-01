@@ -10,6 +10,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import skinxyou_backend.catalog.product.ProductRepository;
@@ -37,11 +40,15 @@ public class BillzCatalogSyncService {
 	private final BillzSyncProperties properties;
 	private final TransactionTemplate transactionTemplate;
 	private final Clock clock;
+	private final ApplicationEventPublisher events;
+	private final TaskExecutor executor;
 	private final AtomicBoolean running = new AtomicBoolean();
 
 	public BillzCatalogSyncService(BillzClient billzClient, BillzProductImporter importer,
 			ProductRepository productRepository, BillzSyncRunRepository runRepository,
-			BillzSyncProperties properties, TransactionTemplate transactionTemplate, Clock clock) {
+			BillzSyncProperties properties, TransactionTemplate transactionTemplate, Clock clock,
+			ApplicationEventPublisher events, @Qualifier("applicationTaskExecutor") TaskExecutor executor) {
+		this.executor = executor;
 		this.billzClient = billzClient;
 		this.importer = importer;
 		this.productRepository = productRepository;
@@ -49,28 +56,76 @@ public class BillzCatalogSyncService {
 		this.properties = properties;
 		this.transactionTemplate = transactionTemplate;
 		this.clock = clock;
+		this.events = events;
 	}
 
 	/** Imports changes since the last successful run; falls back to a full run if there was none. */
 	public Optional<BillzSyncRun> runDelta() {
-		Optional<BillzSyncRun> lastSuccess = runRepository.findFirstByStatusOrderByStartedAtDesc(SyncStatus.SUCCESS);
-		if (lastSuccess.isEmpty()) {
-			log.info("No successful BILLZ sync yet, running full sync instead of delta");
-			return runFull();
-		}
-		Instant since = lastSuccess.get().getStartedAt().minus(properties.deltaOverlap());
-		return run(SyncType.DELTA, since);
+		return runExclusively(SyncType.DELTA);
 	}
 
 	public Optional<BillzSyncRun> runFull() {
-		return run(SyncType.FULL, null);
+		return runExclusively(SyncType.FULL);
 	}
 
-	private Optional<BillzSyncRun> run(SyncType type, Instant updatedSince) {
+	/**
+	 * For manual starts: claims the sync slot before returning, so callers immediately see
+	 * {@link #isRunning()} as true, then does the work on the executor.
+	 *
+	 * @return false when a sync is already running
+	 */
+	public boolean startInBackground(SyncType type) {
+		if (!running.compareAndSet(false, true)) {
+			return false;
+		}
+		try {
+			executor.execute(() -> {
+				try {
+					runClaimed(type);
+				}
+				finally {
+					running.set(false);
+				}
+			});
+		}
+		catch (RuntimeException e) {
+			running.set(false);
+			throw e;
+		}
+		return true;
+	}
+
+	public boolean isRunning() {
+		return running.get();
+	}
+
+	private Optional<BillzSyncRun> runExclusively(SyncType type) {
 		if (!running.compareAndSet(false, true)) {
 			log.info("BILLZ sync already in progress, skipping {} run", type);
 			return Optional.empty();
 		}
+		try {
+			return Optional.of(runClaimed(type));
+		}
+		finally {
+			running.set(false);
+		}
+	}
+
+	/** Runs with the sync slot already held by the caller. */
+	private BillzSyncRun runClaimed(SyncType type) {
+		if (type == SyncType.FULL) {
+			return run(SyncType.FULL, null);
+		}
+		Optional<BillzSyncRun> lastSuccess = runRepository.findFirstByStatusOrderByStartedAtDesc(SyncStatus.SUCCESS);
+		if (lastSuccess.isEmpty()) {
+			log.info("No successful BILLZ sync yet, running full sync instead of delta");
+			return run(SyncType.FULL, null);
+		}
+		return run(SyncType.DELTA, lastSuccess.get().getStartedAt().minus(properties.deltaOverlap()));
+	}
+
+	private BillzSyncRun run(SyncType type, Instant updatedSince) {
 		BillzSyncRun run = runRepository.save(new BillzSyncRun(type, clock.instant(), updatedSince));
 		try {
 			if (type == SyncType.FULL) {
@@ -88,10 +143,21 @@ public class BillzCatalogSyncService {
 			run.fail(clock.instant(), e.getMessage());
 			log.error("BILLZ {} sync failed", type, e);
 		}
-		finally {
-			running.set(false);
+		BillzSyncRun saved = runRepository.save(run);
+		publishHealthChange(saved);
+		return saved;
+	}
+
+	/** Only a switch between working and broken is announced, not every failed 15-minute run. */
+	private void publishHealthChange(BillzSyncRun run) {
+		SyncStatus previous = runRepository
+				.findFirstByStatusNotAndIdLessThanOrderByIdDesc(SyncStatus.RUNNING, run.getId())
+				.map(BillzSyncRun::getStatus)
+				.orElse(SyncStatus.SUCCESS);
+		if (previous != run.getStatus()) {
+			events.publishEvent(new SyncHealthChangedEvent(run.getStatus() == SyncStatus.SUCCESS, run.getType(),
+					run.getErrorMessage()));
 		}
-		return Optional.of(runRepository.save(run));
 	}
 
 	private void delta(BillzSyncRun run) {

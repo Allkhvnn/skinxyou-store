@@ -18,6 +18,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.support.TransactionTemplate;
 import skinxyou_backend.TestcontainersConfiguration;
@@ -37,11 +39,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "billz.sync.shop-id=" + BillzCatalogSyncServiceTest.SHOP)
 @ActiveProfiles("test")
+@RecordApplicationEvents
 @Import({TestcontainersConfiguration.class, BillzCatalogSyncServiceTest.ClockConfig.class})
 class BillzCatalogSyncServiceTest {
 
@@ -71,6 +76,9 @@ class BillzCatalogSyncServiceTest {
 
 	@Autowired
 	MutableClock clock;
+
+	@Autowired
+	ApplicationEvents events;
 
 	@BeforeEach
 	void cleanDatabase() {
@@ -234,6 +242,56 @@ class BillzCatalogSyncServiceTest {
 	}
 
 	@Test
+	void backgroundStartIsVisibleImmediatelyAndRejectsAConcurrentStart() throws Exception {
+		java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+		BillzProduct product = product("p-1", "A", "SKU-1", "100", "1").build();
+		doAnswer(inv -> {
+			release.await(10, java.util.concurrent.TimeUnit.SECONDS);
+			return inv.<Integer>getArgument(0) == 1 ? new BillzProductPage(1, List.of(product))
+					: new BillzProductPage(1, List.of());
+		}).when(billzClient).getProducts(anyInt(), anyInt(), any());
+
+		assertThat(syncService.startInBackground(SyncType.FULL)).isTrue();
+		assertThat(syncService.isRunning()).isTrue();
+		assertThat(syncService.startInBackground(SyncType.DELTA)).isFalse();
+		assertThat(syncService.runFull()).isEmpty();
+
+		release.countDown();
+		long deadline = System.currentTimeMillis() + 10_000;
+		while (syncService.isRunning() && System.currentTimeMillis() < deadline) {
+			Thread.sleep(50);
+		}
+		assertThat(syncService.isRunning()).isFalse();
+		assertThat(runRepository.findAll()).singleElement()
+				.satisfies(run -> assertThat(run.getStatus()).isEqualTo(SyncStatus.SUCCESS));
+	}
+
+	@Test
+	void announcesOnlyTransitionsBetweenWorkingAndFailing() {
+		billzReturns(product("p-1", "A", "SKU-1", "100", "1"));
+		syncService.runFull();
+		assertThat(events.stream(SyncHealthChangedEvent.class)).isEmpty();
+
+		doThrow(new BillzApiException(503, "down")).when(billzClient).getProducts(anyInt(), anyInt(), any());
+		clock.advance(Duration.ofMinutes(15));
+		syncService.runDelta();
+		clock.advance(Duration.ofMinutes(15));
+		syncService.runDelta();
+		assertThat(events.stream(SyncHealthChangedEvent.class))
+				.singleElement()
+				.satisfies(e -> {
+					assertThat(e.healthy()).isFalse();
+					assertThat(e.errorMessage()).isEqualTo("down");
+				});
+
+		billzReturns(product("p-1", "A", "SKU-1", "100", "1"));
+		clock.advance(Duration.ofMinutes(15));
+		syncService.runDelta();
+		assertThat(events.stream(SyncHealthChangedEvent.class)).hasSize(2).last()
+				.satisfies(e -> assertThat(e.healthy()).isTrue());
+	}
+
+	@Test
 	void usesConfiguredShopAndPromoPriceOnlyWhileAPromoIsActive() {
 		billzReturns(
 				product("p-1", "With promo", "SKU-1", "10000", "4").promo("8000"),
@@ -261,9 +319,11 @@ class BillzCatalogSyncServiceTest {
 
 	private void billzReturns(ProductBuilder... products) {
 		List<BillzProduct> list = java.util.Arrays.stream(products).map(ProductBuilder::build).toList();
-		when(billzClient.getProducts(anyInt(), anyInt(), any())).thenAnswer(inv -> inv.<Integer>getArgument(0) == 1
+		// doAnswer form: re-stubbing must not invoke a method that may currently be stubbed to throw.
+		doAnswer(inv -> inv.<Integer>getArgument(0) == 1
 				? new BillzProductPage(list.size(), list)
-				: new BillzProductPage(list.size(), List.of()));
+				: new BillzProductPage(list.size(), List.of()))
+				.when(billzClient).getProducts(anyInt(), anyInt(), any());
 	}
 
 	private Product byBillzId(String billzId) {

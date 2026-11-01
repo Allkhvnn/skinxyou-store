@@ -3,7 +3,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { changeOrderStatus, ORDER_STATUSES, PAYMENT_STATUSES, type OrderStatus, type PaymentStatus } from "@/lib/admin/api";
+import {
+  changeOrderStatus,
+  ORDER_STATUSES,
+  PAYMENT_STATUSES,
+  startSync,
+  type OrderStatus,
+  type PaymentStatus,
+} from "@/lib/admin/api";
 import { getSession, SESSION_COOKIE } from "@/lib/admin/session";
 
 // Server Actions are reachable by direct POST: every action re-checks the session itself.
@@ -71,4 +78,14 @@ export async function changeStatus(_prev: FormState, formData: FormData): Promis
   }
   if (!result.ok) return { error: result.message };
   redirect(`/admin/orders/${number}`);
+}
+
+export async function runSync(_prev: FormState, formData: FormData): Promise<FormState> {
+  const session = await getSession();
+  if (!session) redirect("/admin/login");
+  const type = formData.get("type");
+  if (type !== "DELTA" && type !== "FULL") return { error: "Некорректный тип синхронизации" };
+  const result = await startSync(session, type);
+  if (!result.ok) return { error: result.message };
+  redirect("/admin/sync");
 }

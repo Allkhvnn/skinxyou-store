@@ -1,5 +1,6 @@
 package skinxyou_backend.catalog.product;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -17,6 +18,15 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 	boolean existsBySlug(String slug);
 
 	long countByAvailableInBillzTrue();
+
+	/** Shown on the storefront. */
+	long countByAvailableInBillzTrueAndHiddenFalse();
+
+	long countByAvailableInBillzTrueAndHiddenFalseAndStockGreaterThan(BigDecimal stock);
+
+	long countByAvailableInBillzFalse();
+
+	long countByHiddenTrue();
 
 	Optional<Product> findBySlugAndHiddenFalseAndAvailableInBillzTrue(String slug);
 

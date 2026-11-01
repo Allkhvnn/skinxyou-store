@@ -78,6 +78,48 @@ export async function getOrder(session: AdminSession, number: string): Promise<A
   return res.json();
 }
 
+export type SyncRun = {
+  id: number;
+  type: "DELTA" | "FULL";
+  status: "RUNNING" | "SUCCESS" | "FAILED";
+  startedAt: string;
+  finishedAt: string | null;
+  durationMs: number | null;
+  productsFetched: number;
+  productsCreated: number;
+  productsUpdated: number;
+  productsDeactivated: number;
+  errorMessage: string | null;
+};
+
+export type SyncStatus = {
+  running: boolean;
+  /** No successful sync for over an hour (computed by the backend). */
+  stale: boolean;
+  lastSuccessAt: string | null;
+  lastRun: SyncRun | null;
+  catalog: { total: number; onSite: number; inStock: number; hidden: number; removedInBillz: number };
+};
+
+export async function getSyncStatus(session: AdminSession): Promise<SyncStatus> {
+  const res = await call(session, "/api/admin/sync/status");
+  if (!res.ok) throw new Error(`Admin sync API responded ${res.status}`);
+  return res.json();
+}
+
+export async function getSyncRuns(session: AdminSession): Promise<Page<SyncRun>> {
+  const res = await call(session, "/api/admin/sync/runs");
+  if (!res.ok) throw new Error(`Admin sync API responded ${res.status}`);
+  return res.json();
+}
+
+export async function startSync(session: AdminSession, type: "DELTA" | "FULL"): Promise<MutationResult> {
+  const res = await call(session, "/api/admin/sync/run", { method: "POST", body: JSON.stringify({ type }) });
+  if (res.status === 202) return { ok: true };
+  if (res.status === 409) return { ok: false, message: "Синхронизация уже идёт. Дождитесь её окончания." };
+  return { ok: false, message: "Не удалось запустить синхронизацию." };
+}
+
 export async function changeOrderStatus(
   session: AdminSession,
   number: string,
