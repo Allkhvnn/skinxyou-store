@@ -14,8 +14,11 @@ export const metadata: Metadata = {
 
 export default function CatalogPage(props: PageProps<"/catalog">) {
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Каталог</h1>
+    <div className="container-page flex flex-col gap-8 py-12 lg:py-16">
+      <header>
+        <p className="eyebrow mb-3">Магазин</p>
+        <h1 className="page-title">Каталог</h1>
+      </header>
       <Suspense fallback={<ProductGridSkeleton />}>
         <Results searchParams={props.searchParams} />
       </Suspense>

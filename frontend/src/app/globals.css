@@ -2,27 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-heading: var(--font-cormorant), ui-serif, Georgia, serif;
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -39,6 +24,15 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* Brand palette from the Figma design */
+  --color-cream: var(--cream);
+  --color-sand: var(--sand);
+  --color-blush: var(--blush);
+  --color-forest: var(--forest);
+  --color-forest-deep: var(--forest-deep);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-image: var(--image);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,82 +43,252 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  --cream: #f8f5ef;
+  --sand: #e4dfd0;
+  --blush: #d9b9a7;
+  --forest: #2e4136;
+  --forest-deep: #1f2f27;
+  --gold: #9b7045;
+  --gold-light: #d6c09c;
+  --image: #ede8de;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: var(--cream);
+  --foreground: #26372d;
+  --card: var(--cream);
+  --card-foreground: #26372d;
+  --popover: var(--cream);
+  --popover-foreground: #26372d;
+  --primary: #26372d;
+  --primary-foreground: var(--cream);
+  --secondary: var(--sand);
+  --secondary-foreground: #26372d;
+  --muted: var(--image);
+  --muted-foreground: #6c756f;
+  --accent: var(--sand);
+  --accent-foreground: #26372d;
+  /* Terracotta: sale prices and badges */
+  --destructive: #9b5148;
+  --border: rgb(38 55 45 / 0.15);
+  --input: rgb(38 55 45 / 0.25);
+  --ring: #26372d;
+  /* The design uses square corners. */
+  --radius: 0rem;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
   }
-  html {
-    @apply font-sans;
+  button {
+    cursor: pointer;
+  }
+  ::selection {
+    background: var(--blush);
+    color: #26372d;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-[1380px] px-5 lg:px-10;
+  }
+
+  .brand {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 1.75rem;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+  }
+
+  .nav-link {
+    position: relative;
+    padding-block: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .nav-link::after {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 1px;
+    content: "";
+    background: currentColor;
+    transform: scaleX(0);
+    transition: transform 200ms ease;
+  }
+
+  .nav-link:hover::after,
+  .nav-link[aria-current="page"]::after {
+    transform: scaleX(1);
+  }
+
+  .icon-button {
+    display: grid;
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    place-items: center;
+    border-radius: 999px;
+    transition: background 180ms ease;
+  }
+
+  .icon-button:hover {
+    background: rgb(38 55 45 / 0.08);
+  }
+
+  .eyebrow {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .display-title {
+    max-width: 40rem;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(3rem, 6vw, 6.2rem);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+  }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(2.25rem, 4vw, 4.25rem);
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+
+  .page-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(2.25rem, 3.5vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .primary-button,
+  .light-button {
+    display: inline-flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding-inline: 1.5rem;
+    background: #26372d;
+    color: var(--cream);
+    font-size: 0.73rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    transition: background 180ms ease, transform 180ms ease;
+  }
+
+  .primary-button:hover {
+    background: #405548;
+    transform: translateY(-1px);
+  }
+
+  .light-button {
+    background: var(--cream);
+    color: #26372d;
+  }
+
+  .light-button:hover {
+    background: var(--sand);
+  }
+
+  .outline-button {
+    display: inline-flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding-inline: 1.5rem;
+    border: 1px solid #26372d;
+    font-size: 0.73rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    transition: background 180ms ease, color 180ms ease;
+  }
+
+  .outline-button:hover {
+    background: #26372d;
+    color: var(--cream);
+  }
+
+  .text-button {
+    display: inline-flex;
+    min-height: 3.25rem;
+    align-items: center;
+    border-bottom: 1px solid currentColor;
+    padding-inline: 0.5rem;
+    font-size: 0.73rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .category-pill {
+    flex: none;
+    border: 1px solid rgb(38 55 45 / 0.25);
+    border-radius: 999px;
+    padding: 0.65rem 1.05rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    transition: all 180ms ease;
+  }
+
+  .category-pill:hover,
+  .category-pill[aria-current="page"] {
+    border-color: #26372d;
+    background: #26372d;
+    color: var(--cream);
+  }
+
+  .product-badge {
+    position: absolute;
+    top: 0.9rem;
+    left: 0.9rem;
+    background: var(--cream);
+    padding: 0.45rem 0.65rem;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+  }
+
+  .field {
+    height: 2.75rem;
+    width: 100%;
+    border: 1px solid var(--input);
+    background: transparent;
+    padding-inline: 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  .field:focus-visible {
+    border-color: #26372d;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

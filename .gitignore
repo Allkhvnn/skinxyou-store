@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Design reference (Figma Make export), not part of the site
+design/
+
 # OS / IDE
 .DS_Store
 Thumbs.db

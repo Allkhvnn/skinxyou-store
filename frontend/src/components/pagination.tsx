@@ -18,10 +18,10 @@ export function Pagination({
   const sorted = [...pages].sort((a, b) => a - b);
 
   return (
-    <nav aria-label="Страницы" className="flex flex-wrap items-center justify-center gap-1">
+    <nav aria-label="Страницы" className="flex flex-wrap items-center justify-center gap-1.5">
       {page > 1 && <PageLink href={hrefFor(page - 1)} label="←" ariaLabel="Предыдущая страница" />}
       {sorted.map((p, i) => (
-        <span key={p} className="flex items-center gap-1">
+        <span key={p} className="flex items-center gap-1.5">
           {i > 0 && p - sorted[i - 1] > 1 && <span className="px-1 text-muted-foreground">…</span>}
           <PageLink href={hrefFor(p)} label={String(p)} current={p === page} />
         </span>
@@ -48,8 +48,8 @@ function PageLink({
       aria-label={ariaLabel}
       aria-current={current ? "page" : undefined}
       className={cn(
-        "flex h-9 min-w-9 items-center justify-center rounded-lg px-3 text-sm",
-        current ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+        "flex size-11 items-center justify-center border text-sm transition",
+        current ? "border-primary bg-primary text-primary-foreground" : "border-input hover:border-primary",
       )}
     >
       {label}

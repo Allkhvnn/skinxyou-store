@@ -14,9 +14,12 @@ export const metadata: Metadata = {
 
 export default function BrandsPage() {
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Бренды</h1>
-      <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted" aria-hidden />}>
+    <div className="container-page flex flex-col gap-10 py-12 lg:py-16">
+      <header>
+        <p className="eyebrow mb-3">Магазин</p>
+        <h1 className="page-title">Бренды</h1>
+      </header>
+      <Suspense fallback={<div className="h-64 animate-pulse bg-image" aria-hidden />}>
         <BrandList />
       </Suspense>
     </div>
@@ -31,13 +34,12 @@ async function BrandList() {
     return <p className="text-sm text-muted-foreground">Бренды скоро появятся.</p>;
   }
   return (
-    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+    <ul className="grid grid-cols-1 border-t border-primary/15 sm:grid-cols-2 lg:grid-cols-3">
       {brands.map((brand) => (
-        <li key={brand.slug}>
-          <Link href={`/brands/${brand.slug}`}
-            className="flex flex-col rounded-xl border p-4 transition-colors hover:bg-muted">
-            <span className="font-medium">{brand.name}</span>
-            <span className="text-xs text-muted-foreground">{pluralizeProducts(brand.productCount)}</span>
+        <li key={brand.slug} className="border-b border-primary/15">
+          <Link href={`/brands/${brand.slug}`} className="group flex items-baseline justify-between gap-4 py-5 pr-4">
+            <span className="font-serif text-2xl transition group-hover:translate-x-1">{brand.name}</span>
+            <span className="eyebrow shrink-0 text-muted-foreground">{pluralizeProducts(brand.productCount)}</span>
           </Link>
         </li>
       ))}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -20,9 +21,11 @@ export async function generateMetadata(props: PageProps<"/brands/[slug]">): Prom
 
 export default function BrandPage(props: PageProps<"/brands/[slug]">) {
   return (
-    <Suspense fallback={<ProductGridSkeleton />}>
-      <BrandContent params={props.params} searchParams={props.searchParams} />
-    </Suspense>
+    <div className="container-page py-12 lg:py-16">
+      <Suspense fallback={<ProductGridSkeleton />}>
+        <BrandContent params={props.params} searchParams={props.searchParams} />
+      </Suspense>
+    </div>
   );
 }
 
@@ -33,8 +36,11 @@ async function BrandContent({ params, searchParams }: Pick<PageProps<"/brands/[s
   const query = { ...parseCatalogQuery(await searchParams), brand: brand.slug };
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-2xl font-semibold tracking-tight">{brand.name}</h1>
+    <div className="flex flex-col gap-8">
+      <header>
+        <Link href="/brands" className="eyebrow mb-3 inline-block hover:underline">Бренды</Link>
+        <h1 className="page-title">{brand.name}</h1>
+      </header>
       <CatalogResults basePath={`/brands/${brand.slug}`} query={query} fixedBrand />
     </div>
   );

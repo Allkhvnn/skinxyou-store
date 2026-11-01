@@ -33,9 +33,11 @@ export async function generateMetadata(props: PageProps<"/product/[slug]">): Pro
 
 export default function ProductPage(props: PageProps<"/product/[slug]">) {
   return (
-    <Suspense fallback={<ProductSkeleton />}>
-      <ProductContent params={props.params} />
-    </Suspense>
+    <div className="container-page py-8 lg:py-12">
+      <Suspense fallback={<ProductSkeleton />}>
+        <ProductContent params={props.params} />
+      </Suspense>
+    </div>
   );
 }
 
@@ -45,47 +47,50 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
   if (!product) notFound();
 
   return (
-    <div className="flex flex-col gap-12">
-      <nav aria-label="Навигация" className="text-sm text-muted-foreground">
-        <Link href="/catalog" className="hover:underline">Каталог</Link>
-        {product.brand && (
-          <>
-            {" / "}
-            <Link href={`/brands/${product.brand.slug}`} className="hover:underline">{product.brand.name}</Link>
-          </>
-        )}
-      </nav>
-
-      <div className="grid gap-8 md:grid-cols-2">
+    <div className="flex flex-col gap-20">
+      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
         <ProductGallery images={product.images} name={product.name} />
 
-        <div className="flex flex-col gap-4">
-          {product.brand && (
-            <Link href={`/brands/${product.brand.slug}`}
-              className="text-sm uppercase tracking-wide text-muted-foreground hover:underline">
-              {product.brand.name}
-            </Link>
-          )}
-          <h1 className="text-2xl font-semibold leading-tight tracking-tight">{product.name}</h1>
-          <Price price={product.price} promoPrice={product.promoPrice} className="text-2xl" />
-
-          <p className={product.inStock ? "text-sm text-green-700 dark:text-green-500" : "text-sm text-muted-foreground"}>
-            {product.inStock ? "В наличии" : "Нет в наличии"}
-          </p>
-
-          {product.inStock ? (
-            <WhatsAppButton message={productOrderMessage(product)}>Заказать в WhatsApp</WhatsAppButton>
-          ) : (
-            <WhatsAppButton variant="outline" message={productAvailabilityMessage(product)}>
-              Спросить о поступлении
-            </WhatsAppButton>
-          )}
-
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-            {product.sku && (
+        <div className="flex flex-col gap-6 lg:pt-6">
+          <nav aria-label="Навигация" className="eyebrow flex flex-wrap gap-2 text-muted-foreground">
+            <Link href="/catalog" className="hover:text-foreground">Каталог</Link>
+            {product.brand && (
               <>
-                <dt className="text-muted-foreground">Артикул</dt>
-                <dd>{product.sku}</dd>
+                <span aria-hidden>/</span>
+                <Link href={`/brands/${product.brand.slug}`} className="hover:text-foreground">{product.brand.name}</Link>
+              </>
+            )}
+          </nav>
+
+          <h1 className="font-serif text-4xl leading-[1.05] tracking-[-0.03em] sm:text-5xl">{product.name}</h1>
+
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Price price={product.price} promoPrice={product.promoPrice} className="text-2xl" />
+            <span className={product.inStock ? "eyebrow text-forest" : "eyebrow text-muted-foreground"}>
+              {product.inStock ? "● В наличии" : "Нет в наличии"}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-3 border-y border-primary/15 py-6">
+            {product.inStock ? (
+              <WhatsAppButton message={productOrderMessage(product)} className="w-full">
+                Заказать в WhatsApp
+              </WhatsAppButton>
+            ) : (
+              <WhatsAppButton variant="outline" message={productAvailabilityMessage(product)} className="w-full">
+                Спросить о поступлении
+              </WhatsAppButton>
+            )}
+            <p className="text-xs leading-5 text-muted-foreground">
+              Менеджер подтвердит наличие и согласует доставку по Алматы.
+            </p>
+          </div>
+
+          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+            {product.brand && (
+              <>
+                <dt className="text-muted-foreground">Бренд</dt>
+                <dd><Link href={`/brands/${product.brand.slug}`} className="hover:underline">{product.brand.name}</Link></dd>
               </>
             )}
             {product.categories.length > 0 && (
@@ -101,17 +106,26 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
                 </dd>
               </>
             )}
+            {product.sku && (
+              <>
+                <dt className="text-muted-foreground">Артикул</dt>
+                <dd>{product.sku}</dd>
+              </>
+            )}
           </dl>
 
           {product.description && (
-            <div className="whitespace-pre-line text-sm leading-relaxed">{product.description}</div>
+            <div className="whitespace-pre-line text-sm leading-7 text-foreground/80">{product.description}</div>
           )}
         </div>
       </div>
 
       {product.related.length > 0 && (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold tracking-tight">Похожие товары</h2>
+        <section className="flex flex-col gap-8">
+          <div>
+            <p className="eyebrow mb-3">Вам может понравиться</p>
+            <h2 className="section-title">Похожие товары.</h2>
+          </div>
           <ProductGrid products={product.related.slice(0, 4)} />
         </section>
       )}
@@ -121,13 +135,13 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
 
 function ProductSkeleton() {
   return (
-    <div className="grid gap-8 md:grid-cols-2" aria-hidden>
-      <div className="aspect-square animate-pulse rounded-xl bg-muted" />
-      <div className="flex flex-col gap-4">
-        <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-        <div className="h-8 w-4/5 animate-pulse rounded bg-muted" />
-        <div className="h-7 w-32 animate-pulse rounded bg-muted" />
-        <div className="h-11 w-full animate-pulse rounded-lg bg-muted" />
+    <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16" aria-hidden>
+      <div className="aspect-[4/5] animate-pulse bg-image" />
+      <div className="flex flex-col gap-5 lg:pt-6">
+        <div className="h-3 w-32 animate-pulse bg-image" />
+        <div className="h-12 w-4/5 animate-pulse bg-image" />
+        <div className="h-7 w-32 animate-pulse bg-image" />
+        <div className="h-13 w-full animate-pulse bg-image" />
       </div>
     </div>
   );
