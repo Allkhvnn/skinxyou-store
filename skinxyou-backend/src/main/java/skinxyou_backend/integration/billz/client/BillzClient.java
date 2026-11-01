@@ -79,12 +79,17 @@ public class BillzClient {
 	}
 
 	/**
+	 * Out-of-stock products are always included, so a full export never mistakes them for removed ones.
+	 *
 	 * @param updatedSince when set, returns only products changed since this moment (delta sync);
 	 *                     deletions are not reported by BILLZ in delta mode
 	 */
 	public BillzProductPage getProducts(int page, int limit, Instant updatedSince) {
 		return get(BillzProductPage.class, uri -> {
-			uri.path("/v2/products").queryParam("page", page).queryParam("limit", limit);
+			uri.path("/v2/products")
+					.queryParam("page", page)
+					.queryParam("limit", limit)
+					.queryParam("include_empty_stocks", true);
 			if (updatedSince != null) {
 				uri.queryParam("last_updated_date", LAST_UPDATED_FORMAT.format(updatedSince));
 			}

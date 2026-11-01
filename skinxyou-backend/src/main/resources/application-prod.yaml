@@ -7,5 +7,10 @@ spring:
   flyway:
     clean-disabled: true
 
+billz:
+  secret-token: ${BILLZ_SECRET_TOKEN}
+  sync:
+    enabled: true
+
 server:
   forward-headers-strategy: framework

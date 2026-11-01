@@ -22,6 +22,17 @@ billz:
   min-request-interval: 550ms
   max-attempts: 4
   initial-backoff: 1s
+  sync:
+    enabled: false
+    # Store Skinxyou — the only BILLZ shop; its prices and stock are shown on the site.
+    shop-id: ${BILLZ_SHOP_ID:3d2238cf-e37a-4377-9efa-96e29d8f1056}
+    page-size: 200
+    delta-overlap: 2m
+    max-full-sync-drop: 0.5
+    initial-delay: PT1M
+    delta-interval: PT15M
+    # Daily full reconciliation at 04:00 Almaty time.
+    full-cron: "0 0 4 * * *"
 
 server:
   shutdown: graceful
