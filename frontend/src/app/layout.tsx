@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 // cyrillic-ext covers Kazakh letters (ә, қ, ң, ө, ұ, ү, і).
@@ -35,7 +37,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ru"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+        <SiteFooter />
+      </body>
     </html>
   );
 }
