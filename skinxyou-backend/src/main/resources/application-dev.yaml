@@ -1,5 +1,8 @@
 # Local development: matches compose.yaml defaults. Override via env vars if needed.
 spring:
+  config:
+    # Picks up POSTGRES_* and BILLZ_SECRET_TOKEN from the repo-level .env (not committed).
+    import: optional:file:../.env[.properties]
   datasource:
     url: jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/${POSTGRES_DB:skinxyou}
     username: ${POSTGRES_USER:skinxyou}

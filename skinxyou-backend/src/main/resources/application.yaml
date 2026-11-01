@@ -11,6 +11,18 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+billz:
+  base-url: https://api-admin.billz.ai
+  secret-token: ${BILLZ_SECRET_TOKEN:}
+  # Static value BILLZ documents for all integrations.
+  platform-id: 7d4a4c38-dd84-4902-b744-0488b80a4c01
+  connect-timeout: 10s
+  read-timeout: 60s
+  # BILLZ limit: 2 requests/second for the whole integration.
+  min-request-interval: 550ms
+  max-attempts: 4
+  initial-backoff: 1s
+
 server:
   shutdown: graceful
   error:
