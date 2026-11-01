@@ -34,7 +34,8 @@ class SkinxyouBackendApplicationTests {
 
 	@Test
 	void unknownEndpointsAreDenied() throws Exception {
+		// Anonymous callers are asked to authenticate first (Bearer token); nothing is served either way.
 		mockMvc.perform(get("/api/anything"))
-				.andExpect(status().isForbidden());
+				.andExpect(status().isUnauthorized());
 	}
 }

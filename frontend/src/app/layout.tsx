@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 // Manrope replaces the design's DM Sans, which has no Cyrillic.
@@ -38,14 +36,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ru" className={`${manrope.variable} ${cormorant.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
-        <div className="bg-primary px-4 py-2.5 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-primary-foreground">
-          Доставка по Алматы · Заказ на сайте и в WhatsApp
-        </div>
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
-      </body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

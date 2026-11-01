@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import skinxyou_backend.order.CheckoutProblemException;
+import skinxyou_backend.order.IllegalStatusTransitionException;
 
 /** RFC 9457 error bodies; adds machine-readable details the checkout form needs. */
 @RestControllerAdvice
@@ -33,6 +35,19 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 				.toList();
 		problem.setProperty("errors", errors);
 		return ResponseEntity.badRequest().body(problem);
+	}
+
+	@ExceptionHandler(IllegalStatusTransitionException.class)
+	ResponseEntity<ProblemDetail> handleIllegalTransition(IllegalStatusTransitionException ex) {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage()));
+	}
+
+	/** Two staff members saved the same order at the same moment. */
+	@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+	ResponseEntity<ProblemDetail> handleConcurrentUpdate(ObjectOptimisticLockingFailureException ex) {
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Заказ уже изменил другой сотрудник. Обновите страницу."));
 	}
 
 	@ExceptionHandler(CheckoutProblemException.class)

@@ -7,6 +7,10 @@ spring:
   flyway:
     clean-disabled: true
 
+admin:
+  # Required in production (no random fallback): at least 32 characters.
+  jwt-secret: ${ADMIN_JWT_SECRET}
+
 billz:
   secret-token: ${BILLZ_SECRET_TOKEN}
   sync:

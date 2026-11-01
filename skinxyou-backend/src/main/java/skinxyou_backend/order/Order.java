@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -95,6 +96,50 @@ public class Order {
 	@UpdateTimestamp
 	@Column(nullable = false)
 	private Instant updatedAt;
+
+	@Version
+	private long version;
+
+	/**
+	 * Order workflow: NEW → CONFIRMED → SHIPPED (courier) / READY_FOR_PICKUP (pickup) → COMPLETED.
+	 * Any non-final order can be cancelled; COMPLETED and CANCELLED are final.
+	 */
+	public List<OrderStatus> allowedNextStatuses() {
+		return switch (status) {
+			case NEW -> List.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED);
+			case CONFIRMED -> List.of(deliveryMethod == DeliveryMethod.COURIER ? OrderStatus.SHIPPED
+					: OrderStatus.READY_FOR_PICKUP, OrderStatus.CANCELLED);
+			case SHIPPED, READY_FOR_PICKUP -> List.of(OrderStatus.COMPLETED, OrderStatus.CANCELLED);
+			case COMPLETED, CANCELLED -> List.of();
+		};
+	}
+
+	/** Payment is set by hand after the Kaspi invoice; PAID can be reverted to fix a mistake. */
+	public List<PaymentStatus> allowedNextPaymentStatuses() {
+		return switch (paymentStatus) {
+			case PENDING -> List.of(PaymentStatus.PAID, PaymentStatus.CANCELLED);
+			case PAID, CANCELLED -> List.of(PaymentStatus.PENDING);
+		};
+	}
+
+	public void changeStatus(OrderStatus target, String changedBy, String note, Instant now) {
+		if (!allowedNextStatuses().contains(target)) {
+			throw new IllegalStatusTransitionException("Нельзя перевести заказ из «" + status + "» в «" + target + "»");
+		}
+		history.add(new OrderStatusHistory(this, OrderStatusHistory.Type.ORDER, status.name(), target.name(), changedBy,
+				note, now));
+		status = target;
+	}
+
+	public void changePaymentStatus(PaymentStatus target, String changedBy, String note, Instant now) {
+		if (!allowedNextPaymentStatuses().contains(target)) {
+			throw new IllegalStatusTransitionException(
+					"Нельзя изменить оплату с «" + paymentStatus + "» на «" + target + "»");
+		}
+		history.add(new OrderStatusHistory(this, OrderStatusHistory.Type.PAYMENT, paymentStatus.name(), target.name(),
+				changedBy, note, now));
+		paymentStatus = target;
+	}
 
 	/** Creates a new order from a quote that has already been checked to be orderable. */
 	static Order place(String number, UUID idempotencyKey, Quote quote, DeliveryMethod deliveryMethod,

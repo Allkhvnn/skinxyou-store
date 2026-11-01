@@ -54,6 +54,14 @@ shop:
     orders-per-10-minutes: 10
     quotes-per-minute: 60
 
+admin:
+  jwt-secret: ${ADMIN_JWT_SECRET:}
+  token-ttl: 12h
+  # Used only to create the very first admin when no staff accounts exist.
+  bootstrap-username: ${ADMIN_BOOTSTRAP_USERNAME:}
+  bootstrap-password: ${ADMIN_BOOTSTRAP_PASSWORD:}
+  bootstrap-display-name: ${ADMIN_BOOTSTRAP_DISPLAY_NAME:}
+
 telegram:
   base-url: https://api.telegram.org
   bot-token: ${TELEGRAM_BOT_TOKEN:}
