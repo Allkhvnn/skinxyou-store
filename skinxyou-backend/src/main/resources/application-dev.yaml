@@ -1,0 +1,11 @@
+# Local development: matches compose.yaml defaults. Override via env vars if needed.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/${POSTGRES_DB:skinxyou}
+    username: ${POSTGRES_USER:skinxyou}
+    password: ${POSTGRES_PASSWORD:change-me}
+
+management:
+  endpoint:
+    health:
+      show-details: always
