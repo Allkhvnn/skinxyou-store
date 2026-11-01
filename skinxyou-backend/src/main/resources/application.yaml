@@ -42,6 +42,23 @@ billz:
     # Daily full reconciliation at 04:00 Almaty time.
     full-cron: "0 0 4 * * *"
 
+shop:
+  checkout:
+    currency: KZT
+    courier-fee: 1000
+    free-courier-from: 50000
+    pickup-address: "Алматы, ул. Курмангазы, 111, БЦ «Байтурсын»"
+  cors:
+    allowed-origins: ${SHOP_ALLOWED_ORIGINS:http://localhost:3000}
+  rate-limit:
+    orders-per-10-minutes: 10
+    quotes-per-minute: 60
+
+telegram:
+  base-url: https://api.telegram.org
+  bot-token: ${TELEGRAM_BOT_TOKEN:}
+  chat-id: ${TELEGRAM_CHAT_ID:}
+
 server:
   shutdown: graceful
   error:

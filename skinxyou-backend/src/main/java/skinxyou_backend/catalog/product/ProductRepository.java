@@ -20,6 +20,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
 	Optional<Product> findBySlugAndHiddenFalseAndAvailableInBillzTrue(String slug);
 
+	List<Product> findAllBySlugInAndHiddenFalseAndAvailableInBillzTrue(Collection<String> slugs);
+
 	/** Marks products not seen by a completed full export (not synced since it started) as unavailable. */
 	@Modifying
 	@Query("""

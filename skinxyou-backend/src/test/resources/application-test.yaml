@@ -1,0 +1,5 @@
+# Tests place many orders from 127.0.0.1; the limiter itself is covered by a dedicated test.
+shop:
+  rate-limit:
+    orders-per-10-minutes: 1000
+    quotes-per-minute: 1000
