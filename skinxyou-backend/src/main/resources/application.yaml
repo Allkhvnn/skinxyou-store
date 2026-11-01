@@ -3,8 +3,16 @@ spring:
     name: skinxyou-backend
   profiles:
     default: dev
+  mvc:
+    problemdetails:
+      # RFC 9457 error bodies without internal details.
+      enabled: true
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        # Loads brands/images for a page of products in a few queries instead of N+1.
+        default_batch_fetch_size: 50
     hibernate:
       ddl-auto: validate
   flyway:
