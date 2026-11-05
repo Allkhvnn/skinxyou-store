@@ -14,6 +14,7 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
             <nav className="flex gap-5">
               <Link href="/admin/orders" className="nav-link">Заказы</Link>
               <Link href="/admin/products" className="nav-link">Товары</Link>
+              <Link href="/admin/analytics" className="nav-link">Аналитика</Link>
               <Link href="/admin/sync" className="nav-link">Синхронизация</Link>
             </nav>
           </div>

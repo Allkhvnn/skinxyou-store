@@ -219,6 +219,30 @@ export async function saveProductContent(
   return { ok: false, message: "Не удалось сохранить. Попробуйте ещё раз." };
 }
 
+export type AnalyticsReport = {
+  from: string;
+  to: string;
+  summary: {
+    orders: number;
+    paidOrders: number;
+    cancelledOrders: number;
+    revenue: number;
+    awaitingPayment: number;
+    averageCheck: number;
+    courierOrders: number;
+    pickupOrders: number;
+  };
+  days: { date: string; orders: number; revenue: number }[];
+  topProducts: { slug: string; name: string; quantity: number; revenue: number }[];
+};
+
+/** The last `days` days ending today; "today" is decided by the backend in Almaty time. */
+export async function getAnalytics(session: AdminSession, days: number): Promise<AnalyticsReport> {
+  const res = await call(session, `/api/admin/analytics?days=${days}`);
+  if (!res.ok) throw new Error(`Admin analytics API responded ${res.status}`);
+  return res.json();
+}
+
 export async function changeOrderStatus(
   session: AdminSession,
   number: string,
