@@ -7,8 +7,11 @@ import {
   changeOrderStatus,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
+  deleteProductImage,
+  makeProductImageMain,
   saveProductContent,
   startSync,
+  uploadProductImage,
   type OrderStatus,
   type PaymentStatus,
 } from "@/lib/admin/api";
@@ -94,6 +97,34 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
     hidden: formData.get("hidden") === "on",
   });
   return result.ok ? { saved: true } : { error: result.message };
+}
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
+/** Upload, delete or make-main for a product photo; the clicked button's value picks the operation. */
+export async function managePhoto(_prev: FormState, formData: FormData): Promise<FormState> {
+  const session = await getSession();
+  if (!session) redirect("/admin/login");
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return { error: "Некорректный товар" };
+  const op = String(formData.get("op") ?? "");
+  const imageId = Number(formData.get("imageId"));
+
+  let result;
+  if (op === "upload") {
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) return { error: "Выберите файл" };
+    if (file.size > MAX_PHOTO_BYTES) return { error: "Фото должно быть не больше 5 МБ" };
+    result = await uploadProductImage(session, id, file);
+  } else if ((op === "delete" || op === "main") && Number.isInteger(imageId) && imageId > 0) {
+    result = op === "delete"
+      ? await deleteProductImage(session, id, imageId)
+      : await makeProductImageMain(session, id, imageId);
+  } else {
+    return { error: "Некорректный запрос" };
+  }
+  if (!result.ok) return { error: result.message };
+  redirect(`/admin/products/${id}`);
 }
 
 export async function runSync(_prev: FormState, formData: FormData): Promise<FormState> {

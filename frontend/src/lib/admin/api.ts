@@ -49,10 +49,16 @@ export type MutationResult = { ok: true } | { ok: false; message: string };
 
 /** Personal data: never cached, always fetched with the staff member's own token. */
 async function call(session: AdminSession, path: string, init?: RequestInit): Promise<Response> {
+  // FormData bodies set their own multipart Content-Type with the boundary.
+  const json = !(init?.body instanceof FormData);
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     cache: "no-store",
-    headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${session.token}` },
+    headers: {
+      Accept: "application/json",
+      ...(json ? { "Content-Type": "application/json" } : {}),
+      Authorization: `Bearer ${session.token}`,
+    },
   });
   if (res.status === 401 || res.status === 403) redirect("/admin/login");
   return res;
@@ -155,7 +161,33 @@ export type AdminProductDetails = {
   seoTitle: string | null;
   seoDescription: string | null;
   hidden: boolean;
+  /** In display order: site photos first (the first is the main photo), then BILLZ photos. */
+  images: { id: number; url: string; source: "SITE" | "BILLZ" }[];
 };
+
+async function problemMessage(res: Response, fallback: string): Promise<string> {
+  const problem = await res.json().catch(() => ({}));
+  return problem.detail ?? fallback;
+}
+
+export async function uploadProductImage(session: AdminSession, id: number, file: File): Promise<MutationResult> {
+  const body = new FormData();
+  body.set("file", file);
+  const res = await call(session, `/api/admin/products/${id}/images`, { method: "POST", body });
+  if (res.ok) return { ok: true };
+  if (res.status === 413) return { ok: false, message: "Фото должно быть не больше 5 МБ" };
+  return { ok: false, message: await problemMessage(res, "Не удалось загрузить фото") };
+}
+
+export async function deleteProductImage(session: AdminSession, id: number, imageId: number): Promise<MutationResult> {
+  const res = await call(session, `/api/admin/products/${id}/images/${imageId}`, { method: "DELETE" });
+  return res.ok ? { ok: true } : { ok: false, message: await problemMessage(res, "Не удалось удалить фото") };
+}
+
+export async function makeProductImageMain(session: AdminSession, id: number, imageId: number): Promise<MutationResult> {
+  const res = await call(session, `/api/admin/products/${id}/images/${imageId}/main`, { method: "POST" });
+  return res.ok ? { ok: true } : { ok: false, message: await problemMessage(res, "Не удалось изменить главное фото") };
+}
 
 export async function listProducts(
   session: AdminSession,

@@ -3,6 +3,11 @@ spring:
     name: skinxyou-backend
   profiles:
     default: dev
+  servlet:
+    multipart:
+      # Admin photo uploads; the service enforces 5 MB per photo.
+      max-file-size: 5MB
+      max-request-size: 6MB
   mvc:
     problemdetails:
       # RFC 9457 error bodies without internal details.
@@ -61,6 +66,13 @@ admin:
   bootstrap-username: ${ADMIN_BOOTSTRAP_USERNAME:}
   bootstrap-password: ${ADMIN_BOOTSTRAP_PASSWORD:}
   bootstrap-display-name: ${ADMIN_BOOTSTRAP_DISPLAY_NAME:}
+
+r2:
+  endpoint: ${R2_ENDPOINT:}
+  bucket: ${R2_BUCKET:}
+  access-key-id: ${R2_ACCESS_KEY_ID:}
+  secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+  public-url: ${R2_PUBLIC_URL:}
 
 telegram:
   base-url: https://api.telegram.org

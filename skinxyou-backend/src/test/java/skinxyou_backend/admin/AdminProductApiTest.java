@@ -13,7 +13,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import skinxyou_backend.integration.r2.ImageStorage;
 import org.springframework.test.web.servlet.MockMvc;
 import skinxyou_backend.TestcontainersConfiguration;
 import skinxyou_backend.catalog.product.ImageSource;
@@ -23,6 +26,14 @@ import skinxyou_backend.catalog.product.ProductRepository;
 import skinxyou_backend.order.OrderRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -50,6 +61,9 @@ class AdminProductApiTest {
 
 	@Autowired
 	PasswordEncoder passwordEncoder;
+
+	@MockitoBean
+	ImageStorage imageStorage;
 
 	private Long tonerId;
 
@@ -119,6 +133,48 @@ class AdminProductApiTest {
 				.andExpect(status().isBadRequest());
 		mockMvc.perform(get("/api/admin/products/999999").header(HttpHeaders.AUTHORIZATION, token))
 				.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void uploadsSitePhotoAsMainAndDeletesIt() throws Exception {
+		String token = bearer();
+		when(imageStorage.upload(anyString(), any(), anyString()))
+				.thenAnswer(inv -> "https://r2.test/" + inv.getArgument(0));
+		when(imageStorage.keyOf(anyString())).thenAnswer(inv -> inv.<String>getArgument(0).replace("https://r2.test/", ""));
+		byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0};
+
+		String body = mockMvc.perform(multipart("/api/admin/products/" + tonerId + "/images")
+						.file(new MockMultipartFile("file", "a.png", "image/png", png))
+						.header(HttpHeaders.AUTHORIZATION, token))
+				.andExpect(status().isOk())
+				// Site photo comes first, before the BILLZ one, so it becomes the main photo.
+				.andExpect(jsonPath("$.images[0].source").value("SITE"))
+				.andExpect(jsonPath("$.images[1].source").value("BILLZ"))
+				.andExpect(jsonPath("$.imageUrl").value(org.hamcrest.Matchers.startsWith("https://r2.test/products/toner/")))
+				.andReturn().getResponse().getContentAsString();
+		verify(imageStorage).upload(org.mockito.ArgumentMatchers.startsWith("products/toner/"), any(), eq("image/png"));
+		mockMvc.perform(get("/api/catalog/products/toner"))
+				.andExpect(jsonPath("$.images[0].url").value(org.hamcrest.Matchers.startsWith("https://r2.test/")));
+
+		Number siteImageId = JsonPath.read(body, "$.images[0].id");
+		Number billzImageId = JsonPath.read(body, "$.images[1].id");
+		mockMvc.perform(delete("/api/admin/products/" + tonerId + "/images/" + billzImageId)
+						.header(HttpHeaders.AUTHORIZATION, token))
+				.andExpect(status().isConflict());
+		mockMvc.perform(delete("/api/admin/products/" + tonerId + "/images/" + siteImageId)
+						.header(HttpHeaders.AUTHORIZATION, token))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.images.length()").value(1));
+		verify(imageStorage).delete(org.mockito.ArgumentMatchers.startsWith("products/toner/"));
+	}
+
+	@Test
+	void rejectsFilesThatAreNotImagesRegardlessOfDeclaredType() throws Exception {
+		mockMvc.perform(multipart("/api/admin/products/" + tonerId + "/images")
+						.file(new MockMultipartFile("file", "evil.png", "image/png", "<script>alert(1)</script>".getBytes()))
+						.header(HttpHeaders.AUTHORIZATION, bearer()))
+				.andExpect(status().isBadRequest());
+		verify(imageStorage, never()).upload(anyString(), any(), anyString());
 	}
 
 	private static Product product(String billzId, String name, String slug) {

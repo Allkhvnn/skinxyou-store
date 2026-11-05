@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ProductContentForm } from "@/components/admin/product-content-form";
+import { ProductPhotos } from "@/components/admin/product-photos";
 import { getProduct } from "@/lib/admin/api";
 import { requireSession } from "@/lib/admin/session";
 import { formatPrice } from "@/lib/format";
@@ -36,10 +37,16 @@ async function ProductEditor({ params }: Pick<PageProps<"/admin/products/[id]">,
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <section className="border border-primary/15 p-5">
-          <h2 className="eyebrow mb-4">Контент сайта</h2>
-          <ProductContentForm product={p} />
-        </section>
+        <div className="flex flex-col gap-6">
+          <section className="border border-primary/15 p-5">
+            <h2 className="eyebrow mb-4">Фото</h2>
+            <ProductPhotos product={p} />
+          </section>
+          <section className="border border-primary/15 p-5">
+            <h2 className="eyebrow mb-4">Контент сайта</h2>
+            <ProductContentForm product={p} />
+          </section>
+        </div>
 
         <aside className="flex h-fit flex-col gap-4 border border-primary/15 p-5 text-sm">
           <h2 className="eyebrow">Из BILLZ (только чтение)</h2>

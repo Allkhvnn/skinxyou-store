@@ -99,6 +99,20 @@ public class Product {
 	@OrderBy("sequence")
 	private List<ProductImage> images = new ArrayList<>();
 
+	/**
+	 * Display order: photos uploaded on the site come first (the first one is the main photo), then
+	 * BILLZ photos with their own main photo first. Sync therefore never overrides the site's choice.
+	 */
+	public List<ProductImage> orderedImages() {
+		return images.stream()
+				.sorted(java.util.Comparator
+						.comparing((ProductImage i) -> i.getSource() != ImageSource.SITE)
+						.thenComparing(i -> i.getSource() == ImageSource.BILLZ && !i.isMain())
+						.thenComparingInt(ProductImage::getSequence)
+						.thenComparing(ProductImage::getId, java.util.Comparator.nullsLast(Long::compare)))
+				.toList();
+	}
+
 	@CreationTimestamp
 	@Column(nullable = false, updatable = false)
 	private Instant createdAt;

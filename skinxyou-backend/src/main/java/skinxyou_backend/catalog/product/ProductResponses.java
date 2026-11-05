@@ -55,7 +55,7 @@ public final class ProductResponses {
 	}
 
 	static ProductSummary summary(Product p) {
-		List<ProductImage> images = orderedImages(p);
+		List<ProductImage> images = p.orderedImages();
 		return new ProductSummary(p.getSlug(), p.getName(), brandRef(p.getBrand()), p.getPrice(), p.getPromoPrice(),
 				p.getCurrency(), isInStock(p), images.isEmpty() ? null : images.getFirst().getUrl());
 	}
@@ -67,16 +67,9 @@ public final class ProductResponses {
 						.map(c -> new CategoryRef(c.getSlug(), c.getName()))
 						.toList(),
 				p.getPrice(), p.getPromoPrice(), p.getCurrency(), isInStock(p),
-				orderedImages(p).stream().map(i -> new Image(i.getUrl())).toList(),
+				p.orderedImages().stream().map(i -> new Image(i.getUrl())).toList(),
 				p.getDescription(), p.getSeoTitle(), p.getSeoDescription(),
 				related.stream().map(ProductResponses::summary).toList());
-	}
-
-	/** Main image first, then by sequence. */
-	private static List<ProductImage> orderedImages(Product p) {
-		return p.getImages().stream()
-				.sorted(Comparator.comparing((ProductImage i) -> !i.isMain()).thenComparingInt(ProductImage::getSequence))
-				.toList();
 	}
 
 	private static boolean isInStock(Product p) {

@@ -2,8 +2,8 @@ package skinxyou_backend.admin;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -18,10 +18,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import skinxyou_backend.catalog.category.Category;
+import skinxyou_backend.catalog.product.ImageSource;
 import skinxyou_backend.catalog.product.Product;
 import skinxyou_backend.catalog.product.ProductImage;
 import skinxyou_backend.catalog.product.ProductRepository;
 import skinxyou_backend.common.web.PageResponse;
+import skinxyou_backend.integration.r2.ImageStorage;
 
 /** Site-owned product content (description, SEO, visibility). BILLZ-owned fields are read-only here. */
 @Slf4j
@@ -29,7 +31,14 @@ import skinxyou_backend.common.web.PageResponse;
 @RequiredArgsConstructor
 public class AdminProductService {
 
+	static final int MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+	private static final int MAX_SITE_IMAGES = 10;
+
 	private final ProductRepository productRepository;
+	private final ImageStorage imageStorage;
+
+	public record Image(Long id, String url, ImageSource source) {
+	}
 
 	public enum Filter {
 		NO_DESCRIPTION, NO_PHOTO, HIDDEN, REMOVED_IN_BILLZ
@@ -43,7 +52,7 @@ public class AdminProductService {
 	public record Details(Long id, String slug, String name, String sku, String barcode, String brand,
 			List<String> categories, BigDecimal price, BigDecimal promoPrice, BigDecimal stock,
 			boolean availableInBillz, String imageUrl, String description, String seoTitle, String seoDescription,
-			boolean hidden) {
+			boolean hidden, List<Image> images) {
 	}
 
 	public record ContentUpdate(String description, String seoTitle, String seoDescription, boolean hidden) {
@@ -71,6 +80,88 @@ public class AdminProductService {
 		return details(productRepository.saveAndFlush(product));
 	}
 
+	/** Uploads a site photo to R2; it is appended after existing site photos. */
+	@Transactional
+	public Details addImage(Long id, byte[] bytes, String actor) {
+		if (bytes.length == 0 || bytes.length > MAX_IMAGE_BYTES) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Фото должно быть не больше 5 МБ");
+		}
+		ImageFormat format = ImageFormat.detect(bytes)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Поддерживаются JPEG, PNG и WebP"));
+		Product product = find(id);
+		List<ProductImage> siteImages = siteImages(product);
+		if (siteImages.size() >= MAX_SITE_IMAGES) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Не больше " + MAX_SITE_IMAGES + " своих фото у товара");
+		}
+		String key = "products/" + product.getSlug() + "/" + UUID.randomUUID() + "." + format.extension;
+		String url = imageStorage.upload(key, bytes, format.contentType);
+		int sequence = siteImages.stream().mapToInt(ProductImage::getSequence).max().orElse(-1) + 1;
+		product.getImages().add(new ProductImage(product, url, sequence, false, ImageSource.SITE));
+		try {
+			Product saved = productRepository.saveAndFlush(product);
+			log.info("Photo added to product {} by {}", product.getSlug(), actor);
+			return details(saved);
+		}
+		catch (RuntimeException e) {
+			deleteQuietly(key);
+			throw e;
+		}
+	}
+
+	/** Only site photos can be removed here; BILLZ photos are managed in BILLZ. */
+	@Transactional
+	public Details deleteImage(Long id, Long imageId, String actor) {
+		Product product = find(id);
+		ProductImage image = siteImage(product, imageId);
+		product.getImages().remove(image);
+		Product saved = productRepository.saveAndFlush(product);
+		String key = imageStorage.keyOf(image.getUrl());
+		if (key != null) {
+			deleteQuietly(key);
+		}
+		log.info("Photo removed from product {} by {}", product.getSlug(), actor);
+		return details(saved);
+	}
+
+	/** Moves a site photo to the front; the first site photo is the product's main photo. */
+	@Transactional
+	public Details makeMain(Long id, Long imageId, String actor) {
+		Product product = find(id);
+		ProductImage target = siteImage(product, imageId);
+		List<ProductImage> ordered = new ArrayList<>(siteImages(product));
+		ordered.remove(target);
+		ordered.addFirst(target);
+		for (int i = 0; i < ordered.size(); i++) {
+			ordered.get(i).setSequence(i);
+		}
+		log.info("Main photo of product {} changed by {}", product.getSlug(), actor);
+		return details(productRepository.saveAndFlush(product));
+	}
+
+	private static List<ProductImage> siteImages(Product product) {
+		return product.orderedImages().stream().filter(i -> i.getSource() == ImageSource.SITE).toList();
+	}
+
+	private static ProductImage siteImage(Product product, Long imageId) {
+		ProductImage image = product.getImages().stream()
+				.filter(i -> i.getId().equals(imageId))
+				.findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Фото не найдено"));
+		if (image.getSource() != ImageSource.SITE) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Фото из BILLZ меняются в BILLZ");
+		}
+		return image;
+	}
+
+	private void deleteQuietly(String key) {
+		try {
+			imageStorage.delete(key);
+		}
+		catch (RuntimeException e) {
+			log.warn("Could not delete {} from storage: {}", key, e.getMessage());
+		}
+	}
+
 	private Product find(Long id) {
 		return productRepository.findById(id)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
@@ -87,7 +178,8 @@ public class AdminProductService {
 				p.getBrand() == null ? null : p.getBrand().getName(),
 				p.getCategories().stream().map(Category::getName).sorted().toList(),
 				p.getPrice(), p.getPromoPrice(), p.getStock(), p.isAvailableInBillz(), mainImage(p),
-				p.getDescription(), p.getSeoTitle(), p.getSeoDescription(), p.isHidden());
+				p.getDescription(), p.getSeoTitle(), p.getSeoDescription(), p.isHidden(),
+				p.orderedImages().stream().map(i -> new Image(i.getId(), i.getUrl(), i.getSource())).toList());
 	}
 
 	private static BigDecimal effectivePrice(Product p) {
@@ -95,10 +187,7 @@ public class AdminProductService {
 	}
 
 	private static String mainImage(Product p) {
-		return p.getImages().stream()
-				.min(Comparator.comparing((ProductImage i) -> !i.isMain()).thenComparingInt(ProductImage::getSequence))
-				.map(ProductImage::getUrl)
-				.orElse(null);
+		return p.orderedImages().stream().findFirst().map(ProductImage::getUrl).orElse(null);
 	}
 
 	private static Specification<Product> specification(String query, Filter filter) {

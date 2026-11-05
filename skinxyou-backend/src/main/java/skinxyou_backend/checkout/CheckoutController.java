@@ -66,11 +66,6 @@ public class CheckoutController {
 	}
 
 	private static String mainImage(Product product) {
-		return product.getImages().stream()
-				.filter(ProductImage::isMain)
-				.findFirst()
-				.or(() -> product.getImages().stream().findFirst())
-				.map(ProductImage::getUrl)
-				.orElse(null);
+		return product.orderedImages().stream().findFirst().map(ProductImage::getUrl).orElse(null);
 	}
 }
