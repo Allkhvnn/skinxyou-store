@@ -120,6 +120,73 @@ export async function startSync(session: AdminSession, type: "DELTA" | "FULL"): 
   return { ok: false, message: "Не удалось запустить синхронизацию." };
 }
 
+export const PRODUCT_FILTERS = ["NO_DESCRIPTION", "NO_PHOTO", "HIDDEN", "REMOVED_IN_BILLZ"] as const;
+export type ProductFilter = (typeof PRODUCT_FILTERS)[number];
+
+export type AdminProductSummary = {
+  id: number;
+  slug: string;
+  name: string;
+  sku: string | null;
+  brand: string | null;
+  price: number | null;
+  stock: number;
+  hidden: boolean;
+  availableInBillz: boolean;
+  hasDescription: boolean;
+  imageCount: number;
+  imageUrl: string | null;
+};
+
+export type AdminProductDetails = {
+  id: number;
+  slug: string;
+  name: string;
+  sku: string | null;
+  barcode: string | null;
+  brand: string | null;
+  categories: string[];
+  price: number | null;
+  promoPrice: number | null;
+  stock: number;
+  availableInBillz: boolean;
+  imageUrl: string | null;
+  description: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  hidden: boolean;
+};
+
+export async function listProducts(
+  session: AdminSession,
+  filter: { q?: string; filter?: ProductFilter; page: number },
+): Promise<Page<AdminProductSummary>> {
+  const params = new URLSearchParams({ page: String(filter.page - 1), size: "30" });
+  if (filter.q) params.set("q", filter.q);
+  if (filter.filter) params.set("filter", filter.filter);
+  const res = await call(session, `/api/admin/products?${params}`);
+  if (!res.ok) throw new Error(`Admin products API responded ${res.status}`);
+  return res.json();
+}
+
+export async function getProduct(session: AdminSession, id: number): Promise<AdminProductDetails> {
+  const res = await call(session, `/api/admin/products/${id}`);
+  if (res.status === 404) notFound();
+  if (!res.ok) throw new Error(`Admin product API responded ${res.status}`);
+  return res.json();
+}
+
+export async function saveProductContent(
+  session: AdminSession,
+  id: number,
+  body: { description?: string; seoTitle?: string; seoDescription?: string; hidden: boolean },
+): Promise<MutationResult> {
+  const res = await call(session, `/api/admin/products/${id}/content`, { method: "PUT", body: JSON.stringify(body) });
+  if (res.ok) return { ok: true };
+  if (res.status === 400) return { ok: false, message: "Слишком длинный текст: проверьте ограничения полей." };
+  return { ok: false, message: "Не удалось сохранить. Попробуйте ещё раз." };
+}
+
 export async function changeOrderStatus(
   session: AdminSession,
   number: string,

@@ -13,6 +13,7 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
             <Link href="/admin/orders" className="brand text-2xl">skinxyou</Link>
             <nav className="flex gap-5">
               <Link href="/admin/orders" className="nav-link">Заказы</Link>
+              <Link href="/admin/products" className="nav-link">Товары</Link>
               <Link href="/admin/sync" className="nav-link">Синхронизация</Link>
             </nav>
           </div>

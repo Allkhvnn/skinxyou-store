@@ -7,6 +7,7 @@ import {
   changeOrderStatus,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
+  saveProductContent,
   startSync,
   type OrderStatus,
   type PaymentStatus,
@@ -78,6 +79,21 @@ export async function changeStatus(_prev: FormState, formData: FormData): Promis
   }
   if (!result.ok) return { error: result.message };
   redirect(`/admin/orders/${number}`);
+}
+
+export async function saveProduct(_prev: FormState, formData: FormData): Promise<FormState & { saved?: boolean }> {
+  const session = await getSession();
+  if (!session) redirect("/admin/login");
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return { error: "Некорректный товар" };
+  const text = (name: string) => String(formData.get(name) ?? "");
+  const result = await saveProductContent(session, id, {
+    description: text("description"),
+    seoTitle: text("seoTitle"),
+    seoDescription: text("seoDescription"),
+    hidden: formData.get("hidden") === "on",
+  });
+  return result.ok ? { saved: true } : { error: result.message };
 }
 
 export async function runSync(_prev: FormState, formData: FormData): Promise<FormState> {
