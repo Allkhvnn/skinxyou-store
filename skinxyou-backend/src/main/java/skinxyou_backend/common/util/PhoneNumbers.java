@@ -9,7 +9,7 @@ public final class PhoneNumbers {
 	}
 
 	/**
-	 * Accepts "+7 706 605 97 13", "87066059713", "7066059713" and similar; returns "+77066059713",
+	 * Accepts "+7 776 005 06 25", "87760050625", "7760050625" and similar; returns "+77760050625",
 	 * or empty when the input is not a Kazakhstan mobile number.
 	 */
 	public static Optional<String> normalizeKz(String input) {

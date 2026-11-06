@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { STORE } from "@/lib/store-info";
 import { whatsappLink } from "@/lib/whatsapp";
 
 export function SiteFooter() {
@@ -23,16 +24,21 @@ export function SiteFooter() {
         <div>
           <p className="mb-4 text-xs font-semibold uppercase tracking-widest">Контакты</p>
           <div className="space-y-2 text-sm text-cream/55">
+            <a href={STORE.phoneHref} className="block transition hover:text-cream">{STORE.phone}</a>
             <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" className="block transition hover:text-cream">
-              WhatsApp: +7 706 605 97 13
+              Написать в WhatsApp
             </a>
-            <p>Алматы, Казахстан</p>
+            <a href={STORE.instagram} target="_blank" rel="noopener noreferrer" className="block transition hover:text-cream">
+              Instagram {STORE.instagramHandle}
+            </a>
+            <p>{STORE.hours}</p>
+            <p>{STORE.pickupAddress}</p>
           </div>
         </div>
       </div>
       <div className="mx-auto mt-12 flex max-w-[1380px] flex-col justify-between gap-3 border-t border-white/10 pt-5 text-[11px] text-white/40 sm:flex-row">
         <p>© SkinxYou. Все права защищены.</p>
-        <p>Цены и наличие обновляются автоматически.</p>
+        <p>Оплата через Kaspi · Цены и наличие обновляются автоматически.</p>
       </div>
     </footer>
   );

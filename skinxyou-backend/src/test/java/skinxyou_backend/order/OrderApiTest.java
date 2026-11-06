@@ -81,7 +81,7 @@ class OrderApiTest {
 
 		tx.executeWithoutResult(s -> {
 			Order order = orderRepository.findAll().getFirst();
-			assertThat(order.getCustomerPhone()).isEqualTo("+77066059713");
+			assertThat(order.getCustomerPhone()).isEqualTo("+77760050625");
 			assertThat(order.getDeliveryAddress()).isEqualTo("ул. Абая, 1, кв. 2");
 			assertThat(order.getHistory()).extracting(OrderStatusHistory::getToStatus).containsExactly("NEW", "PENDING");
 		});
@@ -146,7 +146,7 @@ class OrderApiTest {
 		place(order(UUID.randomUUID(), "COURIER", " ", item("toner", 1)))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.errors[*].field").value(hasItem("addressPresentForCourier")));
-		place(order(UUID.randomUUID(), "PICKUP", null, false, "+7 706 605 97 13", item("toner", 1)))
+		place(order(UUID.randomUUID(), "PICKUP", null, false, "+7 776 005 06 25", item("toner", 1)))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.errors[*].field").value(hasItem("consent")));
 		place(order(UUID.randomUUID(), "PICKUP", null, true, "12345", item("toner", 1)))
@@ -164,7 +164,7 @@ class OrderApiTest {
 		verify(telegramClient, timeout(5000)).send(message.capture());
 		assertThat(message.getValue())
 				.contains("Новый заказ SX-")
-				.contains("+77066059713")
+				.contains("+77760050625")
 				.contains("Sun Cream (SKU-p-2) × 1 — 9 000 ₸")
 				.contains("Доставка: курьер, Абая 1")
 				.contains("Итого: 10 000 ₸");
@@ -207,7 +207,7 @@ class OrderApiTest {
 	}
 
 	private static String order(UUID key, String delivery, String address, String... items) {
-		return order(key, delivery, address, true, "8 706 605 97 13", items);
+		return order(key, delivery, address, true, "8 776 005 06 25", items);
 	}
 
 	private static String order(UUID key, String delivery, String address, boolean consent, String phone,

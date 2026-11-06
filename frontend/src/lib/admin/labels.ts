@@ -46,7 +46,7 @@ export function formatDateTime(iso: string): string {
   return dateFormat.format(new Date(iso));
 }
 
-/** "+77066059713" → "+7 706 605 97 13" */
+/** "+77760050625" → "+7 776 005 06 25" */
 export function formatPhone(phone: string): string {
   const d = phone.replace(/\D/g, "");
   return d.length === 11 ? `+${d[0]} ${d.slice(1, 4)} ${d.slice(4, 7)} ${d.slice(7, 9)} ${d.slice(9)}` : phone;

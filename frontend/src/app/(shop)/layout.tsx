@@ -1,3 +1,4 @@
+import { AnnouncementBar } from "@/components/announcement-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -5,9 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 export default function ShopLayout({ children }: LayoutProps<"/">) {
   return (
     <>
-      <div className="bg-primary px-4 py-2.5 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-primary-foreground">
-        Доставка по Алматы · Заказ на сайте и в WhatsApp
-      </div>
+      <AnnouncementBar />
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />

@@ -1,7 +1,7 @@
 import { formatPrice } from "@/lib/format";
 
 // International format without "+", as wa.me expects (8 706 … → 7 706 …).
-const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "77066059713";
+const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "77760050625";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export function whatsappLink(text?: string): string {

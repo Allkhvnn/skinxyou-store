@@ -9,9 +9,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PhoneNumbersTest {
 
 	@ParameterizedTest
-	@ValueSource(strings = {"+7 706 605 97 13", "87066059713", "77066059713", "7066059713", "+7 (706) 605-97-13"})
+	@ValueSource(strings = {"+7 776 005 06 25", "87760050625", "77760050625", "7760050625", "+7 (776) 005-06-25"})
 	void normalizesKazakhstanMobileNumbers(String input) {
-		assertThat(PhoneNumbers.normalizeKz(input)).contains("+77066059713");
+		assertThat(PhoneNumbers.normalizeKz(input)).contains("+77760050625");
 	}
 
 	@ParameterizedTest
