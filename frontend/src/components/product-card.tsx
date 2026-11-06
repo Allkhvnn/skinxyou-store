@@ -4,8 +4,10 @@ import Link from "next/link";
 import { QuickAddButton } from "@/components/cart/add-to-cart-button";
 import { Price } from "@/components/price";
 import type { ProductSummary } from "@/lib/catalog-api";
+import { discountPercent } from "@/lib/format";
 
 export function ProductCard({ product }: { product: ProductSummary }) {
+  const discount = discountPercent(product.price, product.promoPrice);
   return (
     // The quick-add button sits over the image but outside the link (no interactive nesting).
     <article className="group relative">
@@ -26,8 +28,8 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           )}
           {!product.inStock ? (
             <span className="product-badge">Нет в наличии</span>
-          ) : product.promoPrice != null ? (
-            <span className="product-badge text-destructive">Скидка</span>
+          ) : discount != null ? (
+            <span className="product-badge text-destructive">−{discount}%</span>
           ) : null}
         </div>
         <div className="pt-4">

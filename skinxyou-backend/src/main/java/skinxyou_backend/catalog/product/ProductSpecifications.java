@@ -16,6 +16,8 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.springframework.data.jpa.domain.Specification;
+import skinxyou_backend.order.OrderItem;
+import skinxyou_backend.order.OrderStatus;
 import skinxyou_backend.catalog.brand.Brand;
 import skinxyou_backend.catalog.category.Category;
 
@@ -50,7 +52,7 @@ final class ProductSpecifications {
 				predicates.add(search(root, cb, filter.query()));
 			}
 			if (!isCountQuery(query)) {
-				query.orderBy(order(sort, root, cb, effectivePrice));
+				query.orderBy(order(sort, root, query, cb, effectivePrice));
 			}
 			return cb.and(predicates.toArray(Predicate[]::new));
 		};
@@ -114,15 +116,27 @@ final class ProductSpecifications {
 		return cb.<Integer>selectCase().when(cb.greaterThan(root.get("stock"), BigDecimal.ZERO), 0).otherwise(1);
 	}
 
-	private static List<Order> order(ProductSort sort, Root<Product> root, CriteriaBuilder cb,
-			Expression<BigDecimal> effectivePrice) {
+	private static List<Order> order(ProductSort sort, Root<Product> root, CriteriaQuery<?> query,
+			CriteriaBuilder cb, Expression<BigDecimal> effectivePrice) {
 		HibernateCriteriaBuilder hcb = (HibernateCriteriaBuilder) cb;
 		return switch (sort) {
 			case NEWEST -> List.of(hcb.desc(root.get("billzUpdatedAt"), false), cb.desc(root.get("id")));
+			case POPULAR -> List.of(cb.desc(unitsSold(root, query, cb)),
+					hcb.desc(root.get("billzUpdatedAt"), false), cb.desc(root.get("id")));
 			case PRICE_ASC -> List.of(cb.asc(effectivePrice), cb.asc(root.get("id")));
 			case PRICE_DESC -> List.of(cb.desc(effectivePrice), cb.desc(root.get("id")));
 			case NAME -> List.of(cb.asc(root.get("name")), cb.asc(root.get("id")));
 		};
+	}
+
+	/** Units of this product in orders that were not cancelled. */
+	private static Expression<Integer> unitsSold(Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+		Subquery<Integer> sold = query.subquery(Integer.class);
+		Root<OrderItem> item = sold.from(OrderItem.class);
+		sold.select(cb.coalesce(cb.sum(item.<Integer>get("quantity")), 0))
+				.where(cb.equal(item.get("product"), root),
+						cb.notEqual(item.get("order").get("status"), OrderStatus.CANCELLED));
+		return sold;
 	}
 
 	private static boolean isCountQuery(CriteriaQuery<?> query) {

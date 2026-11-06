@@ -9,7 +9,7 @@ import { ProductGrid } from "@/components/product-card";
 import { ProductGallery } from "@/components/product-gallery";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { getCheckoutOptions, getProduct } from "@/lib/catalog-api";
-import { formatPrice } from "@/lib/format";
+import { discountPercent, formatPrice } from "@/lib/format";
 import { productAvailabilityMessage, productOrderMessage } from "@/lib/whatsapp";
 
 export async function generateMetadata(props: PageProps<"/product/[slug]">): Promise<Metadata> {
@@ -72,6 +72,12 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
               {product.inStock ? "● В наличии" : "Нет в наличии"}
             </span>
           </div>
+          {discountPercent(product.price, product.promoPrice) != null && (
+            <p className="-mt-3 text-sm text-destructive">
+              Скидка {discountPercent(product.price, product.promoPrice)}% · вы экономите{" "}
+              {formatPrice(product.price! - product.promoPrice!)}
+            </p>
+          )}
 
           <div className="flex flex-col gap-3 border-y border-primary/15 py-6">
             {product.inStock ? (

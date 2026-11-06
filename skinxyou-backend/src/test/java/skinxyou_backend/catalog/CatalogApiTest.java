@@ -3,6 +3,7 @@ package skinxyou_backend.catalog;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import skinxyou_backend.TestcontainersConfiguration;
 import skinxyou_backend.catalog.brand.Brand;
@@ -21,6 +24,8 @@ import skinxyou_backend.catalog.product.ImageSource;
 import skinxyou_backend.catalog.product.Product;
 import skinxyou_backend.catalog.product.ProductImage;
 import skinxyou_backend.catalog.product.ProductRepository;
+import skinxyou_backend.integration.telegram.TelegramClient;
+import skinxyou_backend.order.OrderRepository;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -28,6 +33,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,12 +55,19 @@ class CatalogApiTest {
 	@Autowired
 	CategoryRepository categoryRepository;
 
+	@Autowired
+	OrderRepository orderRepository;
+
+	@MockitoBean
+	TelegramClient telegramClient;
+
 	private Brand cosrx;
 	private Category face;
 	private Category sun;
 
 	@BeforeEach
 	void seed() {
+		orderRepository.deleteAll();
 		productRepository.deleteAll();
 		brandRepository.deleteAll();
 		categoryRepository.deleteAll();
@@ -117,6 +130,23 @@ class CatalogApiTest {
 				.andExpect(jsonPath("$.items[*].slug").value(contains("sun-cream-spf50", "snail-cleanser", "toner-100-pure")));
 		mockMvc.perform(get("/api/catalog/products").param("sort", "price_desc"))
 				.andExpect(jsonPath("$.items[0].slug").value("toner-100-pure"));
+	}
+
+	@Test
+	void sortsByUnitsSoldThenNewest() throws Exception {
+		order("sun-cream-spf50", 1);
+		order("snail-cleanser", 3);
+		mockMvc.perform(get("/api/catalog/products").param("sort", "popular"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.items[*].slug").value(contains("snail-cleanser", "sun-cream-spf50", "toner-100-pure")));
+	}
+
+	private void order(String slug, int quantity) throws Exception {
+		mockMvc.perform(post("/api/orders").contentType(MediaType.APPLICATION_JSON).content("""
+						{"idempotencyKey":"%s","name":"Test","phone":"87011112233","deliveryMethod":"PICKUP",
+						 "consent":true,"items":[{"slug":"%s","quantity":%d}]}
+						""".formatted(UUID.randomUUID(), slug, quantity)))
+				.andExpect(status().isCreated());
 	}
 
 	@Test

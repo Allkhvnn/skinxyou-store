@@ -45,6 +45,7 @@ export type Category = {
 
 export const SORTS = {
   newest: "Сначала новые",
+  popular: "Популярные",
   price_asc: "Сначала дешевле",
   price_desc: "Сначала дороже",
   name: "По названию",

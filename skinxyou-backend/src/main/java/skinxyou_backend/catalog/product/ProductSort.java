@@ -5,6 +5,8 @@ import java.util.Optional;
 
 public enum ProductSort {
 	NEWEST("newest"),
+	/** Most units sold in non-cancelled orders first. */
+	POPULAR("popular"),
 	PRICE_ASC("price_asc"),
 	PRICE_DESC("price_desc"),
 	NAME("name");
