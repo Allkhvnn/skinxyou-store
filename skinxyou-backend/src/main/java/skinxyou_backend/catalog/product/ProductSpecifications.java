@@ -52,7 +52,10 @@ final class ProductSpecifications {
 				predicates.add(search(root, cb, filter.query()));
 			}
 			if (!isCountQuery(query)) {
-				query.orderBy(order(sort, root, query, cb, effectivePrice));
+				List<Order> orders = new ArrayList<>();
+				orders.add(cb.asc(outOfStockFirst(root, cb)));
+				orders.addAll(order(sort, root, query, cb, effectivePrice));
+				query.orderBy(orders);
 			}
 			return cb.and(predicates.toArray(Predicate[]::new));
 		};
@@ -81,6 +84,23 @@ final class ProductSpecifications {
 			if (!isCountQuery(query)) {
 				query.orderBy(cb.asc(outOfStockFirst(root, cb)), cb.desc(root.get("billzUpdatedAt")),
 						cb.desc(root.get("id")));
+			}
+			return cb.and(predicates.toArray(Predicate[]::new));
+		};
+	}
+
+	/** In-stock products outside {@code excludedIds}, closest in price first: tops up a short related list. */
+	static Specification<Product> alternativesTo(Product product, Set<Long> excludedIds) {
+		return (root, query, cb) -> {
+			List<Predicate> predicates = visible(root, cb);
+			predicates.add(cb.greaterThan(root.get("stock"), BigDecimal.ZERO));
+			predicates.add(cb.not(root.get("id").in(excludedIds)));
+			if (!isCountQuery(query)) {
+				BigDecimal price = product.getPromoPrice() != null ? product.getPromoPrice() : product.getPrice();
+				HibernateCriteriaBuilder hcb = (HibernateCriteriaBuilder) cb;
+				query.orderBy(price != null
+						? List.of(hcb.asc(cb.abs(cb.diff(effectivePrice(root, cb), price)), false), cb.desc(root.get("id")))
+						: List.of(cb.desc(root.get("id"))));
 			}
 			return cb.and(predicates.toArray(Predicate[]::new));
 		};

@@ -19,7 +19,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
               alt={product.name}
               fill
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
-              className="object-cover transition duration-700 group-hover:scale-[1.04]"
+              className={`object-cover transition duration-700 group-hover:scale-[1.04] ${product.inStock ? "" : "opacity-55 grayscale-[35%]"}`}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs uppercase tracking-widest text-muted-foreground">

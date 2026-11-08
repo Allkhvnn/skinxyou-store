@@ -11,6 +11,13 @@ export function discountPercent(price: number | null, promoPrice: number | null)
   return Math.max(1, Math.round((1 - promoPrice / price) * 100));
 }
 
+/** BILLZ names vary in case ("ТОНЕРЫ", "маски"); short acronyms like SPF stay as they are. */
+export function categoryLabel(name: string): string {
+  if (name.length <= 3) return name;
+  const lower = name === name.toUpperCase() ? name.toLowerCase() : name;
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 export function pluralizeProducts(count: number): string {
   const mod10 = count % 10;
   const mod100 = count % 100;

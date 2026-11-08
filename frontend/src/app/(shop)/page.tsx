@@ -1,3 +1,4 @@
+import { categoryLabel } from "@/lib/format";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -131,7 +132,7 @@ async function CategoryPills() {
   return (
     <nav aria-label="Категории" className="flex max-w-full gap-2 overflow-x-auto pb-2">
       {categories.map((c) => (
-        <Link key={c.slug} href={`/catalog?category=${c.slug}`} className="category-pill">{c.name}</Link>
+        <Link key={c.slug} href={`/catalog?category=${c.slug}`} className="category-pill">{categoryLabel(c.name)}</Link>
       ))}
     </nav>
   );

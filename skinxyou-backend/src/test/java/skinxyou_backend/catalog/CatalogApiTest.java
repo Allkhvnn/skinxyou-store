@@ -101,14 +101,14 @@ class CatalogApiTest {
 	}
 
 	@Test
-	void listsOnlyVisibleProductsNewestFirstIncludingOutOfStock() throws Exception {
+	void listsOnlyVisibleProductsInStockFirstThenNewest() throws Exception {
 		mockMvc.perform(get("/api/catalog/products"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.items[*].slug").value(contains("toner-100-pure", "sun-cream-spf50", "snail-cleanser")))
+				.andExpect(jsonPath("$.items[*].slug").value(contains("sun-cream-spf50", "snail-cleanser", "toner-100-pure")))
 				.andExpect(jsonPath("$.totalItems").value(3))
-				.andExpect(jsonPath("$.items[0].inStock").value(false))
-				.andExpect(jsonPath("$.items[2].imageUrl").value("https://img/main.jpg"))
-				.andExpect(jsonPath("$.items[2].brand.name").value("COSRX"))
+				.andExpect(jsonPath("$.items[2].inStock").value(false))
+				.andExpect(jsonPath("$.items[1].imageUrl").value("https://img/main.jpg"))
+				.andExpect(jsonPath("$.items[1].brand.name").value("COSRX"))
 				.andExpect(jsonPath("$.items[0].stock").doesNotExist())
 				.andExpect(jsonPath("$.items[0].billzId").doesNotExist());
 	}
@@ -129,7 +129,7 @@ class CatalogApiTest {
 		mockMvc.perform(get("/api/catalog/products").param("sort", "price_asc"))
 				.andExpect(jsonPath("$.items[*].slug").value(contains("sun-cream-spf50", "snail-cleanser", "toner-100-pure")));
 		mockMvc.perform(get("/api/catalog/products").param("sort", "price_desc"))
-				.andExpect(jsonPath("$.items[0].slug").value("toner-100-pure"));
+				.andExpect(jsonPath("$.items[*].slug").value(contains("snail-cleanser", "sun-cream-spf50", "toner-100-pure")));
 	}
 
 	@Test
@@ -197,8 +197,8 @@ class CatalogApiTest {
 				.andExpect(jsonPath("$.inStock").value(true))
 				.andExpect(jsonPath("$.categories[*].slug").value(contains("face")))
 				.andExpect(jsonPath("$.images[*].url").value(contains("https://img/main.jpg", "https://img/second.jpg")))
-				// Same brand and same category; hidden and removed products are never related.
-				.andExpect(jsonPath("$.related[*].slug").value(contains("toner-100-pure")));
+				// Same brand and category first, then in-stock alternatives; hidden and removed products never appear.
+				.andExpect(jsonPath("$.related[*].slug").value(contains("toner-100-pure", "sun-cream-spf50")));
 	}
 
 	@Test

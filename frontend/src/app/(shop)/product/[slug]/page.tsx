@@ -1,3 +1,4 @@
+import { ChevronRight, CreditCard, Store, Truck, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,9 +8,11 @@ import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import { Price } from "@/components/price";
 import { ProductGrid } from "@/components/product-card";
 import { ProductGallery } from "@/components/product-gallery";
+import { ExpandableText, ProductTabs } from "@/components/product-tabs";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { getCheckoutOptions, getProduct } from "@/lib/catalog-api";
-import { discountPercent, formatPrice } from "@/lib/format";
+import { categoryLabel, discountPercent, formatPrice } from "@/lib/format";
+import { STORE } from "@/lib/store-info";
 import { productAvailabilityMessage, productOrderMessage } from "@/lib/whatsapp";
 
 export async function generateMetadata(props: PageProps<"/product/[slug]">): Promise<Metadata> {
@@ -54,11 +57,17 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
         <ProductGallery images={product.images} name={product.name} />
 
         <div className="flex flex-col gap-6 lg:pt-6">
-          <nav aria-label="Навигация" className="eyebrow flex flex-wrap gap-2 text-muted-foreground">
+          <nav aria-label="Хлебные крошки" className="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-muted-foreground">
             <Link href="/catalog" className="hover:text-foreground">Каталог</Link>
+            {product.categories[0] && (
+              <>
+                <ChevronRight className="size-3.5" aria-hidden />
+                <Link href={`/catalog?category=${product.categories[0].slug}`} className="hover:text-foreground">{categoryLabel(product.categories[0].name)}</Link>
+              </>
+            )}
             {product.brand && (
               <>
-                <span aria-hidden>/</span>
+                <ChevronRight className="size-3.5" aria-hidden />
                 <Link href={`/brands/${product.brand.slug}`} className="hover:text-foreground">{product.brand.name}</Link>
               </>
             )}
@@ -88,10 +97,6 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
                 <WhatsAppButton variant="outline" message={productOrderMessage(product)} className="w-full">
                   Заказать в WhatsApp
                 </WhatsAppButton>
-                <p className="text-xs leading-5 text-muted-foreground">
-                  Доставка по Алматы — {formatPrice(options.courierFee)}, бесплатно от{" "}
-                  {formatPrice(options.freeCourierFrom)}. Самовывоз — бесплатно.
-                </p>
               </>
             ) : (
               <>
@@ -105,37 +110,71 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
             )}
           </div>
 
-          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-            {product.brand && (
-              <>
-                <dt className="text-muted-foreground">Бренд</dt>
-                <dd><Link href={`/brands/${product.brand.slug}`} className="hover:underline">{product.brand.name}</Link></dd>
-              </>
-            )}
-            {product.categories.length > 0 && (
-              <>
-                <dt className="text-muted-foreground">Категория</dt>
-                <dd>
-                  {product.categories.map((c, i) => (
-                    <span key={c.slug}>
-                      {i > 0 && ", "}
-                      <Link href={`/catalog?category=${c.slug}`} className="hover:underline">{c.name}</Link>
-                    </span>
-                  ))}
-                </dd>
-              </>
-            )}
-            {product.sku && (
-              <>
-                <dt className="text-muted-foreground">Артикул</dt>
-                <dd>{product.sku}</dd>
-              </>
-            )}
-          </dl>
-
-          {product.description && (
-            <div className="whitespace-pre-line text-sm leading-7 text-foreground/80">{product.description}</div>
-          )}
+          <ProductTabs
+            panels={[
+              {
+                label: "Описание",
+                content: product.description ? (
+                  <ExpandableText text={product.description} />
+                ) : (
+                  <div className="flex flex-col items-start gap-3 text-sm leading-6 text-muted-foreground">
+                    <p>Подскажем состав, способ применения и подойдёт ли средство вашей коже.</p>
+                    <WhatsAppButton variant="text" message={productAvailabilityMessage(product)}>
+                      Спросить о товаре в WhatsApp
+                    </WhatsAppButton>
+                  </div>
+                ),
+              },
+              {
+                label: "Характеристики",
+                content: (
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+                    {product.brand && (
+                      <>
+                        <dt className="text-muted-foreground">Бренд</dt>
+                        <dd><Link href={`/brands/${product.brand.slug}`} className="underline-offset-4 hover:underline">{product.brand.name}</Link></dd>
+                      </>
+                    )}
+                    {product.categories.length > 0 && (
+                      <>
+                        <dt className="text-muted-foreground">Категория</dt>
+                        <dd>
+                          {product.categories.map((c, i) => (
+                            <span key={c.slug}>
+                              {i > 0 && ", "}
+                              <Link href={`/catalog?category=${c.slug}`} className="underline-offset-4 hover:underline">{categoryLabel(c.name)}</Link>
+                            </span>
+                          ))}
+                        </dd>
+                      </>
+                    )}
+                    {product.sku && (
+                      <>
+                        <dt className="text-muted-foreground">Артикул</dt>
+                        <dd>{product.sku}</dd>
+                      </>
+                    )}
+                  </dl>
+                ),
+              },
+              {
+                label: "Оплата и доставка",
+                content: (
+                  <ul className="flex flex-col gap-4 text-sm leading-6">
+                    <InfoRow icon={Truck} title="Курьер по Алматы">
+                      {formatPrice(options.courierFee)}, бесплатно от {formatPrice(options.freeCourierFrom)}
+                    </InfoRow>
+                    <InfoRow icon={Store} title="Самовывоз — бесплатно">
+                      {STORE.pickupAddress}. {STORE.hours}
+                    </InfoRow>
+                    <InfoRow icon={CreditCard} title="Оплата через Kaspi">
+                      После оформления менеджер отправит счёт в Kaspi
+                    </InfoRow>
+                  </ul>
+                ),
+              },
+            ]}
+          />
         </div>
       </div>
 
@@ -143,12 +182,24 @@ async function ProductContent({ params }: Pick<PageProps<"/product/[slug]">, "pa
         <section className="flex flex-col gap-8">
           <div>
             <p className="eyebrow mb-3">Вам может понравиться</p>
-            <h2 className="section-title">Похожие товары.</h2>
+            <h2 className="section-title">Рекомендуем также.</h2>
           </div>
           <ProductGrid products={product.related.slice(0, 4)} />
         </section>
       )}
     </div>
+  );
+}
+
+function InfoRow({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <Icon className="mt-0.5 size-5 shrink-0 text-forest" strokeWidth={1.6} aria-hidden />
+      <div>
+        <p className="font-medium">{title}</p>
+        <p className="text-muted-foreground">{children}</p>
+      </div>
+    </li>
   );
 }
 

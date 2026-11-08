@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { SORTS, type Brand, type Category, type ProductQuery } from "@/lib/catalog-api";
 import { catalogHref } from "@/lib/catalog-query";
+import { categoryLabel } from "@/lib/format";
 
 /**
  * Category pills + sort/stock controls + collapsible filters, submitting to the same URL.
@@ -35,7 +36,7 @@ export function CatalogFilters({
           {topCategories.map((c) => (
             <Link key={c.slug} href={catalogHref(action, query, { category: c.slug, page: 1 })} className="category-pill"
               aria-current={query.category === c.slug ? "page" : undefined}>
-              {c.name}
+              {categoryLabel(c.name)}
             </Link>
           ))}
         </nav>
