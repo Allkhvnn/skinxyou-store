@@ -58,6 +58,9 @@ class CatalogApiTest {
 	@Autowired
 	OrderRepository orderRepository;
 
+	@Autowired
+	org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
 	@MockitoBean
 	TelegramClient telegramClient;
 
@@ -139,6 +142,29 @@ class CatalogApiTest {
 		mockMvc.perform(get("/api/catalog/products").param("sort", "popular"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.items[*].slug").value(contains("snail-cleanser", "sun-cream-spf50", "toner-100-pure")));
+	}
+
+	@Test
+	void marksBestSellersAsHitsAndOnlyPostImportProductsAsNew() throws Exception {
+		order("snail-cleanser", 1);
+		jdbcTemplate.update("update product set created_at = now() - interval '10 days'");
+		jdbcTemplate.update("update product set created_at = now() where slug = 'sun-cream-spf50'");
+
+		mockMvc.perform(get("/api/catalog/products").param("sort", "popular"))
+				.andExpect(jsonPath("$.items[0].slug").value("snail-cleanser"))
+				.andExpect(jsonPath("$.items[0].hit").value(true))
+				.andExpect(jsonPath("$.items[0].isNew").value(false))
+				.andExpect(jsonPath("$.items[1].slug").value("sun-cream-spf50"))
+				.andExpect(jsonPath("$.items[1].hit").value(false))
+				.andExpect(jsonPath("$.items[1].isNew").value(true));
+		mockMvc.perform(get("/api/catalog/products").param("onlyNew", "true"))
+				.andExpect(jsonPath("$.items[*].slug").value(contains("sun-cream-spf50")));
+	}
+
+	@Test
+	void firstImportIsNotNew() throws Exception {
+		mockMvc.perform(get("/api/catalog/products").param("onlyNew", "true"))
+				.andExpect(jsonPath("$.totalItems").value(0));
 	}
 
 	private void order(String slug, int quantity) throws Exception {

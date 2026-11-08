@@ -9,5 +9,6 @@ public record ProductFilter(
 		BigDecimal minPrice,
 		BigDecimal maxPrice,
 		boolean inStock,
-		String query) {
+		String query,
+		boolean onlyNew) {
 }

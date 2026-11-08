@@ -48,7 +48,7 @@ export default function Home() {
       <section id="shop" className="container-page py-20 lg:py-28">
         <div className="mb-10 flex flex-col justify-between gap-7 md:flex-row md:items-end">
           <div>
-            <p className="eyebrow mb-3">Новинки в наличии</p>
+            <p className="eyebrow mb-3">Популярное</p>
             <h2 className="section-title">Красота в каждой капле.</h2>
           </div>
           <Suspense fallback={null}>
@@ -56,7 +56,7 @@ export default function Home() {
           </Suspense>
         </div>
         <Suspense fallback={<ProductGridSkeleton />}>
-          <NewArrivals />
+          <Popular />
         </Suspense>
         <div className="mt-12 flex justify-center">
           <Link href="/catalog" className="outline-button">
@@ -64,6 +64,10 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      <Suspense fallback={null}>
+        <NewArrivals />
+      </Suspense>
 
       <section className="grid bg-forest text-cream lg:grid-cols-2">
         <div className="relative min-h-[420px] lg:min-h-[650px]">
@@ -119,10 +123,26 @@ export default function Home() {
 
 // Data sections render per request (from cached data) so the build does not depend on the backend.
 
+async function Popular() {
+  await connection();
+  const page = await getProducts({ inStock: true, sort: "popular", size: 8 });
+  return <ProductGrid products={page.items} />;
+}
+
+/** Hidden until something arrives after the first BILLZ import. */
 async function NewArrivals() {
   await connection();
-  const page = await getProducts({ inStock: true, sort: "newest", size: 8 });
-  return <ProductGrid products={page.items} />;
+  const page = await getProducts({ inStock: true, onlyNew: true, sort: "newest", size: 4 });
+  if (page.items.length === 0) return null;
+  return (
+    <section className="container-page pb-20 lg:pb-28">
+      <div className="mb-10">
+        <p className="eyebrow mb-3">Только что привезли</p>
+        <h2 className="section-title">Новинки.</h2>
+      </div>
+      <ProductGrid products={page.items} />
+    </section>
+  );
 }
 
 async function CategoryPills() {

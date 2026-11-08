@@ -1,8 +1,11 @@
+import { connection } from "next/server";
+
 import { getCheckoutOptions } from "@/lib/catalog-api";
 import { formatPrice } from "@/lib/format";
 import { STORE } from "@/lib/store-info";
 
 export async function AnnouncementBar() {
+  await connection();
   const options = await getCheckoutOptions();
   return (
     <div className="bg-primary px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.18em] text-primary-foreground">

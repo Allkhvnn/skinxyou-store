@@ -17,6 +17,20 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
 	boolean existsBySlug(String slug);
 
+	@Query("select min(p.createdAt) from Product p")
+	Instant firstCreatedAt();
+
+	/** Best sellers since {@code since}, by units in orders that were not cancelled. */
+	@Query("""
+			select i.product.id from OrderItem i
+			where i.order.status <> skinxyou_backend.order.OrderStatus.CANCELLED and i.order.createdAt >= :since
+				and i.product.hidden = false and i.product.availableInBillz = true
+			group by i.product.id
+			order by sum(i.quantity) desc, i.product.id
+			""")
+	List<Long> findBestSellerIds(@org.springframework.data.repository.query.Param("since") Instant since,
+			org.springframework.data.domain.Pageable pageable);
+
 	long countByAvailableInBillzTrue();
 
 	/** Shown on the storefront. */

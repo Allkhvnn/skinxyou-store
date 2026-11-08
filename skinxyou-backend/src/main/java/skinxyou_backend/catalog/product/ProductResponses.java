@@ -1,8 +1,10 @@
 package skinxyou_backend.catalog.product;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import skinxyou_backend.catalog.brand.Brand;
 import skinxyou_backend.catalog.category.Category;
@@ -11,6 +13,10 @@ import skinxyou_backend.catalog.category.Category;
 public final class ProductResponses {
 
 	private ProductResponses() {
+	}
+
+	/** "New" and "hit" markers, computed once per request. */
+	record Badges(Instant newSince, Set<Long> hitIds) {
 	}
 
 	public record BrandRef(String slug, String name) {
@@ -34,7 +40,9 @@ public final class ProductResponses {
 			BigDecimal promoPrice,
 			String currency,
 			boolean inStock,
-			String imageUrl) {
+			String imageUrl,
+			boolean isNew,
+			boolean hit) {
 	}
 
 	public record ProductDetails(
@@ -54,13 +62,14 @@ public final class ProductResponses {
 			List<ProductSummary> related) {
 	}
 
-	static ProductSummary summary(Product p) {
+	static ProductSummary summary(Product p, Badges badges) {
 		List<ProductImage> images = p.orderedImages();
 		return new ProductSummary(p.getSlug(), p.getName(), brandRef(p.getBrand()), p.getPrice(), p.getPromoPrice(),
-				p.getCurrency(), isInStock(p), images.isEmpty() ? null : images.getFirst().getUrl());
+				p.getCurrency(), isInStock(p), images.isEmpty() ? null : images.getFirst().getUrl(),
+				p.getCreatedAt().isAfter(badges.newSince()), badges.hitIds().contains(p.getId()));
 	}
 
-	static ProductDetails details(Product p, List<Product> related) {
+	static ProductDetails details(Product p, List<Product> related, Badges badges) {
 		return new ProductDetails(p.getSlug(), p.getName(), p.getSku(), brandRef(p.getBrand()),
 				p.getCategories().stream()
 						.sorted(Comparator.comparing(Category::getName))
@@ -69,7 +78,7 @@ public final class ProductResponses {
 				p.getPrice(), p.getPromoPrice(), p.getCurrency(), isInStock(p),
 				p.orderedImages().stream().map(i -> new Image(i.getUrl())).toList(),
 				p.getDescription(), p.getSeoTitle(), p.getSeoDescription(),
-				related.stream().map(ProductResponses::summary).toList());
+				related.stream().map(r -> summary(r, badges)).toList());
 	}
 
 	private static boolean isInStock(Product p) {

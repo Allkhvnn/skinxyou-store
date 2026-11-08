@@ -28,7 +28,7 @@ final class ProductSpecifications {
 	private ProductSpecifications() {
 	}
 
-	static Specification<Product> catalog(ProductFilter filter, ProductSort sort) {
+	static Specification<Product> catalog(ProductFilter filter, ProductSort sort, java.time.Instant newSince) {
 		return (root, query, cb) -> {
 			List<Predicate> predicates = visible(root, cb);
 			Expression<BigDecimal> effectivePrice = effectivePrice(root, cb);
@@ -47,6 +47,9 @@ final class ProductSpecifications {
 			}
 			if (filter.inStock()) {
 				predicates.add(cb.greaterThan(root.get("stock"), BigDecimal.ZERO));
+			}
+			if (filter.onlyNew()) {
+				predicates.add(cb.greaterThan(root.<java.time.Instant>get("createdAt"), newSince));
 			}
 			if (filter.query() != null) {
 				predicates.add(search(root, cb, filter.query()));

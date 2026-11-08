@@ -14,9 +14,11 @@ export type ProductSummary = {
   currency: string | null;
   inStock: boolean;
   imageUrl: string | null;
+  isNew: boolean;
+  hit: boolean;
 };
 
-export type ProductDetails = Omit<ProductSummary, "imageUrl"> & {
+export type ProductDetails = Omit<ProductSummary, "imageUrl" | "isNew" | "hit"> & {
   sku: string | null;
   categories: { slug: string; name: string }[];
   images: { url: string }[];
@@ -61,6 +63,7 @@ export type ProductQuery = {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  onlyNew?: boolean;
   sort?: Sort;
   page?: number;
   size?: number;
@@ -83,6 +86,7 @@ function toApiParams(query: ProductQuery): string {
   if (query.minPrice != null) params.set("minPrice", String(query.minPrice));
   if (query.maxPrice != null) params.set("maxPrice", String(query.maxPrice));
   if (query.inStock) params.set("inStock", "true");
+  if (query.onlyNew) params.set("onlyNew", "true");
   if (query.sort) params.set("sort", query.sort);
   params.set("page", String(Math.max(0, (query.page ?? 1) - 1)));
   params.set("size", String(query.size ?? 24));

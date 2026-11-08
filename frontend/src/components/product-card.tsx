@@ -30,6 +30,10 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             <span className="product-badge">Нет в наличии</span>
           ) : discount != null ? (
             <span className="product-badge text-destructive">−{discount}%</span>
+          ) : product.hit ? (
+            <span className="product-badge">Хит</span>
+          ) : product.isNew ? (
+            <span className="product-badge">Новинка</span>
           ) : null}
         </div>
         <div className="pt-4">

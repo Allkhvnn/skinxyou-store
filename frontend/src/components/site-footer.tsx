@@ -6,7 +6,7 @@ import { whatsappLink } from "@/lib/whatsapp";
 export function SiteFooter() {
   return (
     <footer className="bg-forest-deep px-5 py-12 text-cream lg:px-10">
-      <div className="mx-auto grid max-w-[1380px] gap-10 md:grid-cols-[1.6fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-[1380px] gap-10 md:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
         <div>
           <p className="brand text-cream">skinxyou</p>
           <p className="mt-4 max-w-xs text-sm leading-6 text-cream/55">
@@ -19,6 +19,16 @@ export function SiteFooter() {
             <Link href="/catalog" className="block transition hover:text-cream">Каталог</Link>
             <Link href="/catalog?inStock=true" className="block transition hover:text-cream">В наличии</Link>
             <Link href="/brands" className="block transition hover:text-cream">Бренды</Link>
+          </div>
+        </div>
+        <div>
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest">Покупателям</p>
+          <div className="space-y-2 text-sm text-cream/55">
+            <Link href="/how-to-order" className="block transition hover:text-cream">Как сделать заказ</Link>
+            <Link href="/delivery" className="block transition hover:text-cream">Доставка</Link>
+            <Link href="/payment" className="block transition hover:text-cream">Оплата</Link>
+            <Link href="/contacts" className="block transition hover:text-cream">Контакты</Link>
+            <Link href="/privacy" className="block transition hover:text-cream">Конфиденциальность</Link>
           </div>
         </div>
         <div>

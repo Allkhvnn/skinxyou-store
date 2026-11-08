@@ -33,13 +33,14 @@ public class ProductController {
 			@RequestParam(required = false) @DecimalMin("0") BigDecimal maxPrice,
 			@RequestParam(defaultValue = "false") boolean inStock,
 			@RequestParam(required = false) @Size(max = 100) String q,
+			@RequestParam(defaultValue = "false") boolean onlyNew,
 			@RequestParam(defaultValue = "newest") String sort,
 			@RequestParam(defaultValue = "0") @Min(0) @Max(10_000) int page,
 			@RequestParam(defaultValue = "24") @Min(1) @Max(100) int size) {
 		ProductSort productSort = ProductSort.fromParam(sort)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown sort: " + sort));
 		ProductFilter filter = new ProductFilter(blankToNull(brand), blankToNull(category), minPrice, maxPrice,
-				inStock, blankToNull(q));
+				inStock, blankToNull(q), onlyNew);
 		return catalogService.search(filter, productSort, page, size);
 	}
 
