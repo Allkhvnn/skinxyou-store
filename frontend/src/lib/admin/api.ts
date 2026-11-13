@@ -219,6 +219,70 @@ export async function saveProductContent(
   return { ok: false, message: "Не удалось сохранить. Попробуйте ещё раз." };
 }
 
+export type AdminBanner = {
+  id: number;
+  title: string;
+  linkUrl: string | null;
+  desktopImageUrl: string | null;
+  mobileImageUrl: string | null;
+  position: number;
+  active: boolean;
+  startsOn: string | null;
+  endsOn: string | null;
+  /** Active, within its dates and has a desktop image. */
+  shownNow: boolean;
+};
+
+export type BannerFields = {
+  title: string;
+  linkUrl: string | null;
+  active: boolean;
+  startsOn: string | null;
+  endsOn: string | null;
+};
+
+export async function listBanners(session: AdminSession): Promise<AdminBanner[]> {
+  const res = await call(session, "/api/admin/banners");
+  if (!res.ok) throw new Error(`Admin banners API responded ${res.status}`);
+  return res.json();
+}
+
+export async function createBanner(session: AdminSession, fields: BannerFields): Promise<MutationResult> {
+  const res = await call(session, "/api/admin/banners", { method: "POST", body: JSON.stringify(fields) });
+  return res.ok ? { ok: true } : { ok: false, message: await problemMessage(res, "Не удалось создать баннер") };
+}
+
+export async function updateBanner(session: AdminSession, id: number, fields: BannerFields): Promise<MutationResult> {
+  const res = await call(session, `/api/admin/banners/${id}`, { method: "PUT", body: JSON.stringify(fields) });
+  return res.ok ? { ok: true } : { ok: false, message: await problemMessage(res, "Не удалось сохранить баннер") };
+}
+
+export async function uploadBannerImage(
+  session: AdminSession, id: number, variant: "DESKTOP" | "MOBILE", file: File,
+): Promise<MutationResult> {
+  const body = new FormData();
+  body.set("file", file);
+  const res = await call(session, `/api/admin/banners/${id}/images/${variant}`, { method: "POST", body });
+  if (res.ok) return { ok: true };
+  if (res.status === 413) return { ok: false, message: "Картинка должна быть не больше 5 МБ" };
+  return { ok: false, message: await problemMessage(res, "Не удалось загрузить картинку") };
+}
+
+export async function removeBannerMobileImage(session: AdminSession, id: number): Promise<MutationResult> {
+  const res = await call(session, `/api/admin/banners/${id}/images/MOBILE`, { method: "DELETE" });
+  return res.ok ? { ok: true } : { ok: false, message: await problemMessage(res, "Не удалось удалить картинку") };
+}
+
+export async function moveBanner(session: AdminSession, id: number, direction: "UP" | "DOWN"): Promise<MutationResult> {
+  const res = await call(session, `/api/admin/banners/${id}/move?direction=${direction}`, { method: "POST" });
+  return res.ok ? { ok: true } : { ok: false, message: "Не удалось изменить порядок" };
+}
+
+export async function deleteBanner(session: AdminSession, id: number): Promise<MutationResult> {
+  const res = await call(session, `/api/admin/banners/${id}`, { method: "DELETE" });
+  return res.ok ? { ok: true } : { ok: false, message: "Не удалось удалить баннер" };
+}
+
 export type AnalyticsReport = {
   from: string;
   to: string;

@@ -1,4 +1,4 @@
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 
 // Server-only: not prefixed with NEXT_PUBLIC_, so it never reaches the browser bundle.
 const API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:8080";
@@ -35,6 +35,16 @@ export type Page<T> = {
   totalItems: number;
   totalPages: number;
 };
+
+export type Banner = {
+  id: number;
+  title: string;
+  linkUrl: string | null;
+  desktopImageUrl: string;
+  mobileImageUrl: string | null;
+};
+
+export const BANNERS_CACHE_TAG = "banners";
 
 export type Brand = { slug: string; name: string; productCount: number };
 
@@ -106,6 +116,14 @@ export async function getProduct(slug: string): Promise<ProductDetails | null> {
   "use cache";
   cacheLife("minutes");
   return getJson<ProductDetails>(`/api/catalog/products/${encodeURIComponent(slug)}`);
+}
+
+/** Admin changes invalidate the "banners" tag, so new slides appear right away. */
+export async function getBanners(): Promise<Banner[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(BANNERS_CACHE_TAG);
+  return (await getJson<Banner[]>("/api/catalog/banners")) ?? [];
 }
 
 export async function getBrands(): Promise<Brand[]> {

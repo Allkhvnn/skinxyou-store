@@ -3,20 +3,20 @@ package skinxyou_backend.admin;
 import java.util.Optional;
 
 /** Detects the image type from the file's own bytes; the client's declared content type is not trusted. */
-enum ImageFormat {
+public enum ImageFormat {
 	JPEG("image/jpeg", "jpg"),
 	PNG("image/png", "png"),
 	WEBP("image/webp", "webp");
 
-	final String contentType;
-	final String extension;
+	public final String contentType;
+	public final String extension;
 
 	ImageFormat(String contentType, String extension) {
 		this.contentType = contentType;
 		this.extension = extension;
 	}
 
-	static Optional<ImageFormat> detect(byte[] b) {
+	public static Optional<ImageFormat> detect(byte[] b) {
 		if (b.length >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) {
 			return Optional.of(JPEG);
 		}

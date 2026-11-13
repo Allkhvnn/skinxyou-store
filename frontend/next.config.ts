@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       new URL("https://fra1.digitaloceanspaces.com/billz2-minio-billz/**"),
       // Photos uploaded in the admin panel (Cloudflare R2 public bucket).
       { protocol: "https", hostname: "*.r2.dev", pathname: "/products/**" },
+      { protocol: "https", hostname: "*.r2.dev", pathname: "/banners/**" },
       // Temporary home page mood photos; object form because the URLs carry query params.
       { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
     ],

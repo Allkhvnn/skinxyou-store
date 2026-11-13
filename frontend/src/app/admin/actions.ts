@@ -1,10 +1,18 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import {
   changeOrderStatus,
+  createBanner,
+  deleteBanner,
+  moveBanner,
+  removeBannerMobileImage,
+  updateBanner,
+  uploadBannerImage,
+  type BannerFields,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
   deleteProductImage,
@@ -16,6 +24,7 @@ import {
   type PaymentStatus,
 } from "@/lib/admin/api";
 import { getSession, SESSION_COOKIE } from "@/lib/admin/session";
+import { BANNERS_CACHE_TAG } from "@/lib/catalog-api";
 
 // Server Actions are reachable by direct POST: every action re-checks the session itself.
 
@@ -135,4 +144,52 @@ export async function runSync(_prev: FormState, formData: FormData): Promise<For
   const result = await startSync(session, type);
   if (!result.ok) return { error: result.message };
   redirect("/admin/sync");
+}
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function bannerFields(formData: FormData): BannerFields {
+  const text = (name: string) => String(formData.get(name) ?? "").trim();
+  const date = (name: string) => (DATE.test(text(name)) ? text(name) : null);
+  return {
+    title: text("title").slice(0, 120),
+    linkUrl: text("linkUrl").slice(0, 500) || null,
+    active: formData.get("active") === "on",
+    startsOn: date("startsOn"),
+    endsOn: date("endsOn"),
+  };
+}
+
+/** Every banner change: the clicked button's value picks the operation. */
+export async function manageBanner(_prev: FormState, formData: FormData): Promise<FormState> {
+  const session = await getSession();
+  if (!session) redirect("/admin/login");
+  const op = String(formData.get("op") ?? "");
+  const id = Number(formData.get("id"));
+  const validId = Number.isInteger(id) && id > 0;
+
+  let result;
+  if (op === "create") {
+    result = await createBanner(session, bannerFields(formData));
+  } else if (!validId) {
+    return { error: "Некорректный баннер" };
+  } else if (op === "save") {
+    result = await updateBanner(session, id, bannerFields(formData));
+  } else if (op === "desktop" || op === "mobile") {
+    const file = formData.get(op === "desktop" ? "desktopFile" : "mobileFile");
+    if (!(file instanceof File) || file.size === 0) return { error: "Выберите файл" };
+    if (file.size > MAX_PHOTO_BYTES) return { error: "Картинка должна быть не больше 5 МБ" };
+    result = await uploadBannerImage(session, id, op === "desktop" ? "DESKTOP" : "MOBILE", file);
+  } else if (op === "removeMobile") {
+    result = await removeBannerMobileImage(session, id);
+  } else if (op === "up" || op === "down") {
+    result = await moveBanner(session, id, op === "up" ? "UP" : "DOWN");
+  } else if (op === "delete") {
+    result = await deleteBanner(session, id);
+  } else {
+    return { error: "Некорректный запрос" };
+  }
+  if (!result.ok) return { error: result.message };
+  updateTag(BANNERS_CACHE_TAG);
+  redirect("/admin/banners");
 }

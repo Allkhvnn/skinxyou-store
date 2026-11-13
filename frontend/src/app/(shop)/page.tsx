@@ -7,7 +7,8 @@ import { Suspense } from "react";
 
 import { ProductGrid, ProductGridSkeleton } from "@/components/product-card";
 import { WhatsAppButton } from "@/components/whatsapp-button";
-import { getBrands, getCategories, getProducts } from "@/lib/catalog-api";
+import { BannerCarousel } from "@/components/banner-carousel";
+import { getBanners, getBrands, getCategories, getProducts } from "@/lib/catalog-api";
 
 // Placeholder mood photos from Unsplash (free for commercial use); to be replaced with own photos.
 const HERO_IMAGE = "https://images.unsplash.com/photo-1739980737820-b6bb1a9b8456?auto=format&fit=crop&w=1400&q=88";
@@ -18,32 +19,9 @@ const CONSULT_MESSAGE = "Здравствуйте! Помогите, пожал�
 export default function Home() {
   return (
     <>
-      <section className="grid lg:min-h-[calc(100vh-7.25rem)] lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
-        <div className="flex items-center bg-sand px-7 py-16 sm:px-12 lg:px-[8vw]">
-          <div className="max-w-xl">
-            <p className="eyebrow mb-5">Уход и макияж · Алматы</p>
-            <h1 className="display-title">Сияние в чистом виде.</h1>
-            <p className="mt-6 max-w-md text-base leading-7 text-[#526058] sm:text-lg">
-              Уходовая и декоративная косметика проверенных брендов. Актуальные цены и наличие, заказ на сайте
-              или в WhatsApp.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/catalog" className="primary-button">
-                Перейти в каталог <ArrowRight className="size-4" strokeWidth={1.7} />
-              </Link>
-              <WhatsAppButton variant="text" message={CONSULT_MESSAGE}>Подобрать уход</WhatsAppButton>
-            </div>
-          </div>
-        </div>
-        <div className="relative min-h-[460px] overflow-hidden lg:min-h-0">
-          <Image src={HERO_IMAGE} alt="Средства для ухода за кожей" fill priority
-            sizes="(min-width: 1024px) 56vw, 100vw" className="object-cover" />
-          <div className="absolute bottom-6 right-6 max-w-[230px] bg-cream/92 p-5 backdrop-blur">
-            <p className="eyebrow">Консультация</p>
-            <p className="mt-2 font-serif text-2xl leading-tight">Подберём уход под вашу кожу.</p>
-          </div>
-        </div>
-      </section>
+      <Suspense fallback={<div className="container-page pt-6 lg:pt-8"><div className="aspect-square animate-pulse bg-image md:aspect-[1600/560]" /></div>}>
+        <Hero />
+      </Suspense>
 
       <section id="shop" className="container-page py-20 lg:py-28">
         <div className="mb-10 flex flex-col justify-between gap-7 md:flex-row md:items-end">
@@ -118,6 +96,48 @@ export default function Home() {
         <WhatsAppButton message="Здравствуйте! У меня вопрос." className="mt-7">Написать</WhatsAppButton>
       </section>
     </>
+  );
+}
+
+/** Banners from the admin panel replace the static hero; the hero stays as a fallback when there are none. */
+async function Hero() {
+  await connection();
+  const banners = await getBanners();
+  if (banners.length > 0) {
+    return (
+      <>
+        <h1 className="sr-only">SkinxYou — уходовая и декоративная косметика в Алматы</h1>
+        <BannerCarousel banners={banners} />
+      </>
+    );
+  }
+  return (
+      <section className="grid lg:min-h-[calc(100vh-7.25rem)] lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
+        <div className="flex items-center bg-sand px-7 py-16 sm:px-12 lg:px-[8vw]">
+          <div className="max-w-xl">
+            <p className="eyebrow mb-5">Уход и макияж · Алматы</p>
+            <h1 className="display-title">Сияние в чистом виде.</h1>
+            <p className="mt-6 max-w-md text-base leading-7 text-[#526058] sm:text-lg">
+              Уходовая и декоративная косметика проверенных брендов. Актуальные цены и наличие, заказ на сайте
+              или в WhatsApp.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link href="/catalog" className="primary-button">
+                Перейти в каталог <ArrowRight className="size-4" strokeWidth={1.7} />
+              </Link>
+              <WhatsAppButton variant="text" message={CONSULT_MESSAGE}>Подобрать уход</WhatsAppButton>
+            </div>
+          </div>
+        </div>
+        <div className="relative min-h-[460px] overflow-hidden lg:min-h-0">
+          <Image src={HERO_IMAGE} alt="Средства для ухода за кожей" fill priority
+            sizes="(min-width: 1024px) 56vw, 100vw" className="object-cover" />
+          <div className="absolute bottom-6 right-6 max-w-[230px] bg-cream/92 p-5 backdrop-blur">
+            <p className="eyebrow">Консультация</p>
+            <p className="mt-2 font-serif text-2xl leading-tight">Подберём уход под вашу кожу.</p>
+          </div>
+        </div>
+      </section>
   );
 }
 
